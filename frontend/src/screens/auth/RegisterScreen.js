@@ -1,4 +1,3 @@
-// src/screens/RegisterScreen.js
 import React, { useMemo, useState } from "react";
 import {
   View,
@@ -23,7 +22,7 @@ const GREEN = "#15A266";
 const DARK_GREEN = "#0D5C3C";
 const LIGHT_BG = "#EAF8EE";
 
-export default function RegisterScreen({ navigation, baseUrl = process.env.EXPO_PUBLIC_API_URL}) {
+export default function RegisterScreen({ navigation, baseUrl = process.env.EXPO_PUBLIC_API_URL }) {
   const api = useMemo(() => createAPI(baseUrl), [baseUrl]);
   const { register } = useAuth();
 
@@ -67,11 +66,15 @@ export default function RegisterScreen({ navigation, baseUrl = process.env.EXPO_
       formData.append('email', email);
       formData.append('password', password);
       formData.append('direccion', direccion);
+
       if (foto) {
+        const uriParts = foto.split('.');
+        const fileType = uriParts[uriParts.length - 1].toLowerCase(); // Esto asegura que el tipo es en minúsculas.
+        
         formData.append('Foto', {
           uri: foto,
-          name: 'foto.jpg',
-          type: 'image/jpeg',
+          name: `foto.${fileType}`,
+          type: `image/${fileType}`,
         });
       }
 
@@ -89,7 +92,7 @@ export default function RegisterScreen({ navigation, baseUrl = process.env.EXPO_
         if (success) {
           Alert.alert(
             "¡Registro exitoso!",
-            `Bienvenido/a ${data.user?.Nombre || 'usuario'}! Ya puedes usar la aplicación.`,
+            `Bienvenido/a ${data.user.Nombre || 'usuario'}! Ya puedes usar la aplicación.`,
             [{ text: "¡Perfecto!", onPress: () => navigation.navigate("Home") }]
           );
         }
@@ -244,7 +247,6 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 6 },
     shadowRadius: 10,
     elevation: 8,
-
     flexDirection: "column",
     justifyContent: "space-between",
   },
