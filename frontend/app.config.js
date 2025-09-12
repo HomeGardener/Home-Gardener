@@ -28,6 +28,10 @@ export default {
         backgroundColor: '#ffffff',
       },
       edgeToEdgeEnabled: true,
+      permissions: [
+        'android.permission.CAMERA',
+        'android.permission.READ_MEDIA_IMAGES'
+      ],
     },
     web: {
       favicon: './assets/favicon.png',

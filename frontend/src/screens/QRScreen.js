@@ -20,9 +20,24 @@ export default function QRScreen({ navigation }) {
   const [hasPermission, setHasPermission] = useState(null);
 
   const requestCameraPermission = async () => {
-    const { status } = await ImagePicker.requestCameraPermissionsAsync();
-    setHasPermission(status === 'granted');
-    return status === 'granted';
+    try {
+      const { status, canAskAgain } = await ImagePicker.getCameraPermissionsAsync();
+      if (status === 'granted') {
+        setHasPermission(true);
+        return true;
+      }
+      if (status !== 'granted' && canAskAgain) {
+        const { status: reqStatus } = await ImagePicker.requestCameraPermissionsAsync();
+        const granted = reqStatus === 'granted';
+        setHasPermission(granted);
+        return granted;
+      }
+      setHasPermission(false);
+      return false;
+    } catch (e) {
+      setHasPermission(false);
+      return false;
+    }
   };
 
   const requestMediaLibraryPermission = async () => {
@@ -31,40 +46,47 @@ export default function QRScreen({ navigation }) {
   };
 
   const takePicture = async () => {
-    const hasPermission = await requestCameraPermission();
-    if (!hasPermission) {
+    const permitted = await requestCameraPermission();
+    if (!permitted) {
       Alert.alert('Permisos', 'Se necesita permiso para acceder a la cámara');
       return;
     }
 
-    const result = await ImagePicker.launchCameraAsync({
-      mediaTypes: ImagePicker.MediaType.Images,
-      allowsEditing: true,
-      aspect: [1, 1],
-      quality: 0.8,
-    });
+    try {
+      const result = await ImagePicker.launchCameraAsync({
+        allowsEditing: true,
+        aspect: [1, 1],
+        quality: 0.8,
+      });
 
-    if (!result.canceled) {
-      setSelectedImage(result.assets[0]);
+      if (!result.canceled) {
+        setSelectedImage(result.assets[0]);
+      }
+    } catch (err) {
+      Alert.alert('Error', 'No se pudo abrir la cámara');
     }
   };
 
   const pickImage = async () => {
-    const hasPermission = await requestMediaLibraryPermission();
-    if (!hasPermission) {
+    const permitted = await requestMediaLibraryPermission();
+    if (!permitted) {
       Alert.alert('Permisos', 'Se necesita permiso para acceder a la galería');
       return;
     }
 
-    const result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ImagePicker.MediaType.Images,
-      allowsEditing: true,
-      aspect: [1, 1],
-      quality: 0.8,
-    });
+    try {
+      const result = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ImagePicker.MediaType.Images,
+        allowsEditing: true,
+        aspect: [1, 1],
+        quality: 0.8,
+      });
 
-    if (!result.canceled) {
-      setSelectedImage(result.assets[0]);
+      if (!result.canceled) {
+        setSelectedImage(result.assets[0]);
+      }
+    } catch (err) {
+      Alert.alert('Error', 'No se pudo abrir la galería');
     }
   };
 
@@ -74,7 +96,6 @@ export default function QRScreen({ navigation }) {
       return;
     }
 
-    // Aquí podrías integrar con una API de análisis de plantas
     Alert.alert(
       'Análisis de Planta',
       'La imagen ha sido procesada. En una implementación real, aquí se mostrarían los resultados del análisis de la planta.',
@@ -82,7 +103,6 @@ export default function QRScreen({ navigation }) {
         {
           text: 'OK',
           onPress: () => {
-            // Aquí podrías navegar a una pantalla de resultados
             console.log('Análisis completado para:', selectedImage.uri);
           }
         }
