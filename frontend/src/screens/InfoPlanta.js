@@ -1,12 +1,13 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, Image, StyleSheet, ActivityIndicator, Alert } from 'react-native';
+import { View, Text, Image, StyleSheet, ActivityIndicator, Alert, TouchableOpacity } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { getApiBaseUrl } from '../services/api';
 
-export default function InfoPlanta({ route }) {
+export default function InfoPlanta({ route, navigation }) {
   const { idPlanta } = route.params;
   const [planta, setPlanta] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [working, setWorking] = useState(false);
 
   useEffect(() => {
     const fetchInfoPlanta = async () => {
@@ -43,6 +44,84 @@ export default function InfoPlanta({ route }) {
 
     fetchInfoPlanta();
   }, [idPlanta]);
+
+  const confirmDisconnect = () => {
+    if (!planta?.idModulo) {
+      Alert.alert('Info', 'La planta no tiene un módulo conectado');
+      return;
+    }
+    Alert.alert(
+      'Desconectar módulo',
+      '¿Seguro que deseas desconectar el módulo de esta planta?',
+      [
+        { text: 'Cancelar', style: 'cancel' },
+        { text: 'Desconectar', style: 'destructive', onPress: handleDisconnect },
+      ]
+    );
+  };
+
+  const handleDisconnect = async () => {
+    try {
+      setWorking(true);
+      const token = await AsyncStorage.getItem('token');
+      const baseUrl = getApiBaseUrl();
+      const res = await fetch(`${baseUrl}/api/sensores/desconectarModulo`, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ idPlanta: Number(idPlanta) }),
+      });
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        throw new Error(err.message || 'No se pudo desconectar el módulo');
+      }
+      setPlanta((prev) => ({ ...prev, idModulo: null }));
+      Alert.alert('Éxito', 'Módulo desconectado');
+    } catch (e) {
+      Alert.alert('Error', e.message || 'No se pudo desconectar el módulo');
+    } finally {
+      setWorking(false);
+    }
+  };
+
+  const confirmDelete = () => {
+    Alert.alert(
+      'Eliminar planta',
+      '¿Seguro que deseas eliminar la planta? Esta acción no se puede deshacer.',
+      [
+        { text: 'Cancelar', style: 'cancel' },
+        { text: 'Eliminar', style: 'destructive', onPress: handleDelete },
+      ]
+    );
+  };
+
+  const handleDelete = async () => {
+    try {
+      setWorking(true);
+      const token = await AsyncStorage.getItem('token');
+      const baseUrl = getApiBaseUrl();
+      const res = await fetch(`${baseUrl}/api/plantas/eliminar`, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ idPlanta: Number(idPlanta) }),
+      });
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        throw new Error(err.message || 'No se pudo eliminar la planta');
+      }
+      Alert.alert('Éxito', 'Planta eliminada');
+      navigation.goBack();
+    } catch (e) {
+      Alert.alert('Error', e.message || 'No se pudo eliminar la planta');
+    } finally {
+      setWorking(false);
+    }
+  };
 
   if (loading) {
     return (
@@ -84,6 +163,14 @@ export default function InfoPlanta({ route }) {
           <Text style={styles.valor}>{planta.idModulo}</Text>
         </>
       )}
+      <View style={{ flexDirection: 'row', marginTop: 16, gap: 12 }}>
+        <TouchableOpacity disabled={working} onPress={confirmDisconnect} style={[styles.actionBtn, { backgroundColor: '#F5F5F5' }]}>
+          <Text style={[styles.actionText, { color: '#333' }]}>Desconectar módulo</Text>
+        </TouchableOpacity>
+        <TouchableOpacity disabled={working} onPress={confirmDelete} style={[styles.actionBtn, { backgroundColor: '#D32F2F' }]}>
+          <Text style={[styles.actionText, { color: '#fff' }]}>Eliminar planta</Text>
+        </TouchableOpacity>
+      </View>
     </View>
   );
 }
@@ -132,4 +219,13 @@ const styles = StyleSheet.create({
     marginTop: 20,
     textAlign: 'center',
     },
+  actionBtn: {
+    paddingVertical: 12,
+    paddingHorizontal: 14,
+    borderRadius: 8,
+  },
+  actionText: {
+    fontSize: 14,
+    fontWeight: '600',
+  },
 });

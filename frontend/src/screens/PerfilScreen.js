@@ -1,39 +1,51 @@
 import React, { useEffect, useState, useMemo } from "react";
 import { View, StyleSheet, Text, Image, TouchableOpacity } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { createAPI } from "../services/api";
+import { useFocusEffect } from '@react-navigation/native';
+import { useAuth } from "../contexts/AuthContext";
+import { getApiBaseUrl } from "../services/api";
 import LogoutButton from "../components/LogoutButton";
 
 export default function PerfilScreen({ navigation, baseUrl = process.env.EXPO_PUBLIC_API_URL }) {
-  const api = useMemo(() => createAPI(baseUrl), [baseUrl]);
+  const { user, updateUser } = useAuth();
+  const [loading, setLoading] = useState(!user);
 
-  const [user, setUser] = useState(null);
-  const [loading, setLoading] = useState(true);
+  const fetchProfile = React.useCallback(async () => {
+    try {
+      const token = await AsyncStorage.getItem('token');
+      if (!token) {
+        setLoading(false);
+        return;
+      }
+      const apiBase = baseUrl || getApiBaseUrl();
+      const res = await fetch(`${apiBase}/api/auth/profile`, {
+        method: 'GET',
+        headers: { 'Authorization': `Bearer ${token}` },
+      });
+      if (res.ok) {
+        const data = await res.json();
+        if (data?.user) {
+          await updateUser(data.user);
+        }
+      }
+    } catch (e) {
+      console.log('Error cargando perfil:', e?.message || e);
+    } finally {
+      setLoading(false);
+    }
+  }, [baseUrl, updateUser]);
 
   useEffect(() => {
-    const loadUser = async () => {
-      try {
-        const token = await AsyncStorage.getItem("token");
-        if (!token) {
-          setLoading(false);
-          return;
-        }
+    if (!user) {
+      fetchProfile();
+    }
+  }, [user, fetchProfile]);
 
-        const { data } = await api.get("/api/auth/profile", {
-          headers: { Authorization: `Bearer ${token}` },
-        });
-
-        setUser(data.user); // acá viene con Nombre, Email, Direccion
-        console.log("User data:", data.user); // Muestra la información del usuario en la consola
-      } catch (e) {
-        console.log("Error cargando perfil:", e?.response?.data || e.message);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    loadUser();
-  }, [api]);
+  useFocusEffect(
+    React.useCallback(() => {
+      fetchProfile();
+    }, [fetchProfile])
+  );
 
   if (loading) {
     return (
@@ -56,8 +68,6 @@ export default function PerfilScreen({ navigation, baseUrl = process.env.EXPO_PU
     ? `${baseUrl.replace(/\/$/, "")}/backend/uploads/${user.Foto}`
     : "https://cdn-icons-png.flaticon.com/512/149/149071.png";
 
-  // Verificar la URL en la consola
-  console.log("Image URL:", imageUrl);
 
   return (
     <View style={styles.container}>

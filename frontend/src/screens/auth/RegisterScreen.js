@@ -108,7 +108,7 @@ export default function RegisterScreen({ navigation, baseUrl = process.env.EXPO_
 
   const pickImage = async () => {
     let result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      mediaTypes: ImagePicker.MediaType.Images,
       allowsEditing: true,
       aspect: [1, 1],
       quality: 0.5,
