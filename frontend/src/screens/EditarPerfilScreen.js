@@ -1,8 +1,13 @@
 import React, { useEffect, useState } from 'react';
-import { View, TextInput, Button, Text, StyleSheet, Alert, ActivityIndicator, Image, TouchableOpacity } from 'react-native';
+import { View, TextInput, Text, StyleSheet, Alert, ActivityIndicator, Image, TouchableOpacity } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as ImagePicker from 'expo-image-picker';
 import { Ionicons } from '@expo/vector-icons';
+import { useAuth } from '../contexts/AuthContext';
+import { getApiBaseUrl } from '../services/api';
+
+const GREEN = '#15A266';
+const LIGHT_BG = '#EAF8EE';
 
 export default function EditarPerfilScreen({ navigation, api, user, baseUrl }) {
   const [nombre, setNombre] = useState('');
@@ -11,39 +16,58 @@ export default function EditarPerfilScreen({ navigation, api, user, baseUrl }) {
   const [error, setError] = useState(null);
   const [loading, setLoading] = useState(true);
   const [updating, setUpdating] = useState(false);
-  const [foto, setFoto] = useState(null);
+  const [foto, setFoto] = useState(null); // UI opcional, backend no la recibe aún
+  const [original, setOriginal] = useState(null);
+  const { updateUser, user: authUser } = useAuth();
 
   useEffect(() => {
     const loadUser = async () => {
       setError(null);
       try {
-        // Si ya tenemos el usuario en contexto, lo usamos; si no, pedimos al backend
-        if (user) {
-          setNombre(user.Nombre || '');
-          setEmail(user.Email || '');
-          setDireccion(user.Direccion || '');
+        const current = authUser || user;
+        if (current) {
+          setNombre(current.Nombre || '');
+          setEmail(current.Email || '');
+          setDireccion(current.Direccion || '');
+          setOriginal(current);
           setLoading(false);
           return;
         }
 
-        const { data } = await api.get('/api/auth/profile');
-        const u = data?.user;
-        setNombre(u?.Nombre || '');
-        setEmail(u?.Email || '');
-        setDireccion(u?.Direccion || '');
+        const token = await AsyncStorage.getItem('token');
+        if (!token) {
+          setLoading(false);
+          setError('No hay sesión activa');
+          return;
+        }
+        const apiBase = baseUrl || getApiBaseUrl();
+        const res = await fetch(`${apiBase}/api/auth/profile`, {
+          method: 'GET',
+          headers: { 'Authorization': `Bearer ${token}` },
+        });
+        if (res.ok) {
+          const data = await res.json();
+          const u = data?.user || {};
+          setNombre(u.Nombre || '');
+          setEmail(u.Email || '');
+          setDireccion(u.Direccion || '');
+          setOriginal(u);
+        } else {
+          setError('No se pudo cargar la información del usuario');
+        }
       } catch (e) {
-        setError(e?.response?.data?.message || 'No se pudo cargar la información del usuario');
+        setError(e?.message || 'No se pudo cargar la información del usuario');
       } finally {
         setLoading(false);
       }
     };
 
     loadUser();
-  }, [api, user]);
+  }, [authUser, user, baseUrl]);
 
   const pickImage = async () => {
     let result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      mediaTypes: ImagePicker.MediaType.Images,
       allowsEditing: true,
       aspect: [1, 1],
       quality: 0.5,
@@ -53,46 +77,72 @@ export default function EditarPerfilScreen({ navigation, api, user, baseUrl }) {
     }
   };
 
+  const validateEmail = (mail) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(mail);
+
   const handleUpdate = async () => {
     setError(null);
+    if (!original) {
+      setError('No hay datos de usuario para comparar');
+      return;
+    }
 
-    if (!nombre.trim() || !email.trim() || !direccion.trim()) {
-      setError('Todos los campos son obligatorios');
+    const trimmedNombre = (nombre || '').trim();
+    const trimmedEmail = (email || '').trim();
+    const trimmedDireccion = (direccion || '').trim();
+
+    const changes = {};
+    if (trimmedNombre && trimmedNombre !== (original.Nombre || '')) {
+      changes.nombre = trimmedNombre;
+    }
+    if (trimmedEmail && trimmedEmail !== (original.Email || '')) {
+      if (!validateEmail(trimmedEmail)) {
+        setError('Formato de email inválido');
+        return;
+      }
+      changes.email = trimmedEmail.toLowerCase();
+    }
+    if (trimmedDireccion && trimmedDireccion !== (original.Direccion || '')) {
+      changes.direccion = trimmedDireccion;
+    }
+
+    if (Object.keys(changes).length === 0) {
+      Alert.alert('Sin cambios', 'No hay cambios para guardar');
       return;
     }
 
     try {
       setUpdating(true);
-      const formData = new FormData();
-      formData.append('nombre', nombre.trim());
-      formData.append('email', email.trim().toLowerCase());
-      formData.append('direccion', direccion.trim());
-      if (foto) {
-        formData.append('Foto', {
-          uri: foto,
-          name: 'foto.jpg',
-          type: 'image/jpeg',
-        });
-      }
-
       const token = await AsyncStorage.getItem('token');
-      const response = await fetch(`${baseUrl}/api/auth/updateProfile`, {
+      const apiBase = baseUrl || getApiBaseUrl();
+      const res = await fetch(`${apiBase}/api/auth/profile`, {
         method: 'PUT',
         headers: {
           'Authorization': `Bearer ${token}`,
-          'Content-Type': 'multipart/form-data',
+          'Content-Type': 'application/json',
         },
-        body: formData,
+        body: JSON.stringify(changes),
       });
 
-      const data = await response.json();
+      const data = await res.json().catch(() => ({}));
 
-      if (response.ok) {
+      if (res.ok) {
+        try {
+          const refreshRes = await fetch(`${apiBase}/api/auth/profile`, {
+            method: 'GET',
+            headers: { 'Authorization': `Bearer ${token}` },
+          });
+          if (refreshRes.ok) {
+            const refreshed = await refreshRes.json();
+            if (refreshed?.user) {
+              await updateUser(refreshed.user);
+            }
+          }
+        } catch {}
+
         Alert.alert('Éxito', 'Tus datos fueron actualizados correctamente');
         navigation.goBack();
       } else {
-        console.error('Error actualizando datos:', data);
-        setError('No se pudo actualizar la información');
+        setError(data?.message || 'No se pudo actualizar la información');
       }
     } catch (e) {
       const msg = e?.response?.data?.message || e.message || 'Ocurrió un error inesperado';
@@ -105,7 +155,7 @@ export default function EditarPerfilScreen({ navigation, api, user, baseUrl }) {
   if (loading) {
     return (
       <View style={styles.loadingContainer}>
-        <ActivityIndicator size="large" />
+        <ActivityIndicator size="large" color={GREEN} />
         <Text style={styles.loading}>Cargando datos...</Text>
       </View>
     );
@@ -115,15 +165,15 @@ export default function EditarPerfilScreen({ navigation, api, user, baseUrl }) {
     <View style={styles.container}>
       <Text style={styles.title}>Editar Perfil</Text>
 
-      <TouchableOpacity onPress={pickImage} style={{ alignItems: 'center', marginBottom: 10 }}>
+      <TouchableOpacity onPress={pickImage} style={styles.avatarContainer}>
         {foto ? (
-          <Image source={{ uri: foto }} style={{ width: 80, height: 80, borderRadius: 40 }} />
+          <Image source={{ uri: foto }} style={styles.avatar} />
         ) : (
-          <View style={{ width: 80, height: 80, borderRadius: 40, backgroundColor: '#ccc', justifyContent: 'center', alignItems: 'center' }}>
+          <View style={[styles.avatar, styles.avatarPlaceholder]}>
             <Ionicons name="camera" size={32} color="#555" />
           </View>
         )}
-        <Text style={{ color: '#555', marginTop: 5 }}>Cambiar foto</Text>
+        <Text style={styles.avatarText}>Cambiar foto (no se envía aún)</Text>
       </TouchableOpacity>
 
       <TextInput
@@ -131,6 +181,7 @@ export default function EditarPerfilScreen({ navigation, api, user, baseUrl }) {
         value={nombre}
         onChangeText={setNombre}
         style={styles.input}
+        placeholderTextColor="#777"
       />
 
       <TextInput
@@ -140,6 +191,7 @@ export default function EditarPerfilScreen({ navigation, api, user, baseUrl }) {
         style={styles.input}
         keyboardType="email-address"
         autoCapitalize="none"
+        placeholderTextColor="#777"
       />
 
       <TextInput
@@ -147,26 +199,42 @@ export default function EditarPerfilScreen({ navigation, api, user, baseUrl }) {
         value={direccion}
         onChangeText={setDireccion}
         style={styles.input}
+        placeholderTextColor="#777"
       />
 
       {error && <Text style={styles.error}>{error}</Text>}
 
-      <Button title={updating ? 'Guardando...' : 'Guardar cambios'} onPress={handleUpdate} disabled={updating} />
+      <TouchableOpacity style={[styles.button, updating && { opacity: 0.7 }]} onPress={handleUpdate} disabled={updating}>
+        <Text style={styles.buttonText}>{updating ? 'Guardando...' : 'Guardar cambios'}</Text>
+      </TouchableOpacity>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, padding: 20, justifyContent: 'center' },
-  title: { fontSize: 24, fontWeight: 'bold', marginBottom: 20, textAlign: 'center' },
+  container: { flex: 1, padding: 20, backgroundColor: LIGHT_BG },
+  title: { fontSize: 24, fontWeight: '800', color: GREEN, textAlign: 'center', marginBottom: 16 },
   input: {
     marginBottom: 12,
-    padding: 10,
+    padding: 12,
     borderWidth: 1,
-    borderColor: '#ccc',
-    borderRadius: 4,
+    borderColor: '#cfd8dc',
+    borderRadius: 10,
+    backgroundColor: '#fff',
   },
-  error: { color: 'red', marginBottom: 10, textAlign: 'center' },
-  loadingContainer: { flex: 1, justifyContent: 'center', alignItems: 'center' },
-  loading: { marginTop: 10, fontSize: 16 },
+  error: { color: '#D32F2F', marginBottom: 10, textAlign: 'center' },
+  loadingContainer: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: LIGHT_BG },
+  loading: { marginTop: 10, fontSize: 16, color: '#555' },
+  button: {
+    backgroundColor: GREEN,
+    paddingVertical: 14,
+    borderRadius: 10,
+    alignItems: 'center',
+    marginTop: 6,
+  },
+  buttonText: { color: '#fff', fontSize: 16, fontWeight: '700' },
+  avatarContainer: { alignItems: 'center', marginBottom: 16 },
+  avatar: { width: 80, height: 80, borderRadius: 40 },
+  avatarPlaceholder: { backgroundColor: '#ccc', justifyContent: 'center', alignItems: 'center' },
+  avatarText: { color: '#555', marginTop: 6 },
 });

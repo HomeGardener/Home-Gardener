@@ -3,11 +3,11 @@ import {
   View,
   Text,
   StyleSheet,
-  SafeAreaView,
   TouchableOpacity,
   ActivityIndicator,
   Alert
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { createAPI } from "../services/api";
 import { getHealthStatus } from "../services/healthService";
 import Ionicons from 'react-native-vector-icons/Ionicons';

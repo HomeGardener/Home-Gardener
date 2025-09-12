@@ -7,6 +7,8 @@ export default {
     version: '1.0.0',
     orientation: 'portrait',
     icon: './assets/image1.png',
+    userInterfaceStyle: 'light',
+    newArchEnabled: true,
     splash: {
       image: './assets/image1.png',
       resizeMode: 'contain',
@@ -20,10 +22,12 @@ export default {
       supportsTablet: true,
     },
     android: {
+      package: 'com.matiasdubin.homegardener',
       adaptiveIcon: {
         foregroundImage: './assets/adaptive-icon.png',
-        backgroundColor: '#FFFFFF',
+        backgroundColor: '#ffffff',
       },
+      edgeToEdgeEnabled: true,
     },
     web: {
       favicon: './assets/favicon.png',
