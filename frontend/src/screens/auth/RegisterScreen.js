@@ -16,7 +16,7 @@ import { createAPI } from "../../services/api";
 import Ionicons from "react-native-vector-icons/Ionicons";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useAuth } from "../../contexts/AuthContext";
-import * as ImagePicker from 'expo-image-picker';
+import * as ImagePicker from "expo-image-picker";
 
 const GREEN = "#15A266";
 const DARK_GREEN = "#0D5C3C";
@@ -25,6 +25,7 @@ const LIGHT_BG = "#EAF8EE";
 export default function RegisterScreen({ navigation, baseUrl = process.env.EXPO_PUBLIC_API_URL }) {
   const api = useMemo(() => createAPI(baseUrl), [baseUrl]);
   const { register } = useAuth();
+  const [status, requestPermission] = ImagePicker.useMediaLibraryPermissions();
 
   const [nombre, setNombre] = useState("");
   const [email, setEmail] = useState("");
@@ -68,13 +69,10 @@ export default function RegisterScreen({ navigation, baseUrl = process.env.EXPO_
       formData.append('direccion', direccion);
 
       if (foto) {
-        const uriParts = foto.split('.');
-        const fileType = uriParts[uriParts.length - 1].toLowerCase(); // Esto asegura que el tipo es en minúsculas.
-        
         formData.append('Foto', {
-          uri: foto,
-          name: `foto.${fileType}`,
-          type: `image/${fileType}`,
+          uri: foto.uri,
+          name: foto.fileName || `foto.${foto.uri.split('.').pop() || 'jpg'}`,
+          type: foto.type,
         });
       }
 
@@ -107,14 +105,29 @@ export default function RegisterScreen({ navigation, baseUrl = process.env.EXPO_
   };
 
   const pickImage = async () => {
-    let result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ImagePicker.MediaType.Images,
-      allowsEditing: true,
-      aspect: [1, 1],
-      quality: 0.5,
-    });
-    if (!result.canceled) {
-      setFoto(result.assets[0].uri);
+    console.log("pickImage llamado");
+    if (!status?.granted) {
+      console.log("Solicitando permiso");
+      const permission = await requestPermission();
+      console.log("Permiso resultado:", permission.granted);
+      if (!permission.granted) {
+        Alert.alert('Permiso denegado', 'Necesitas dar permiso para acceder a la galería.');
+        return;
+      }
+    }
+    try {
+      const result = await ImagePicker.launchImageLibraryAsync({
+        allowsEditing: true,
+        aspect: [1, 1],
+        quality: 0.5,
+      });
+      console.log("Resultado picker:", result);
+      if (!result.canceled) {
+        setFoto(result.assets[0]);
+      }
+    } catch (error) {
+      console.error("Error al seleccionar imagen:", error);
+      Alert.alert("Error", "No se pudo abrir la galería.");
     }
   };
 
@@ -144,9 +157,15 @@ export default function RegisterScreen({ navigation, baseUrl = process.env.EXPO_
 
             {/* FORM */}
             <View style={styles.form}>
-              <TouchableOpacity onPress={pickImage} style={{ alignItems: 'center', marginBottom: 10 }}>
+              <TouchableOpacity
+                onPress={() => {
+                  console.log("Botón subir foto presionado");
+                  pickImage();
+                }}
+                style={{ alignItems: 'center', marginBottom: 10 }}
+              >
                 {foto ? (
-                  <Image source={{ uri: foto }} style={{ width: 80, height: 80, borderRadius: 40 }} />
+                  <Image source={{ uri: foto.uri }} style={{ width: 80, height: 80, borderRadius: 40 }} />
                 ) : (
                   <View style={{ width: 80, height: 80, borderRadius: 40, backgroundColor: '#ccc', justifyContent: 'center', alignItems: 'center' }}>
                     <Ionicons name="camera" size={32} color="#555" />
