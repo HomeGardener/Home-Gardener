@@ -3,6 +3,7 @@ import { StatusCodes } from 'http-status-codes';
 import AuthService from '../services/auth-service.js';
 import authenticateToken from '../middlewares/auth.js';
 import { uploadFile } from '../utils/upload.js'; // <--- importamos
+import mailService from '../services/mail-service.js';
 
 const router = Router();
 const authService = new AuthService();
@@ -27,6 +28,11 @@ router.post('/register', (req, res) => {
       };
 
       const { user, token } = await authService.register(userData);
+
+      // Enviar correo de bienvenida (no bloquea la respuesta)
+      mailService.sendWelcomeEmail(user).catch(error => {
+        console.error('Error enviando correo de bienvenida:', error);
+      });
 
       res.status(StatusCodes.CREATED).json({
         success: true,

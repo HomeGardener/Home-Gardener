@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Confirmación de Compra - Home Gardener</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f8f9fa;
+        }
+        .container {
+            background-color: #ffffff;
+            border-radius: 10px;
+            padding: 30px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        .logo {
+            font-size: 2.5em;
+            color: #15A266;
+            margin-bottom: 10px;
+        }
+        .title {
+            color: #15A266;
+            font-size: 1.8em;
+            margin-bottom: 20px;
+        }
+        .success-badge {
+            background-color: #d4edda;
+            color: #155724;
+            padding: 10px 20px;
+            border-radius: 20px;
+            display: inline-block;
+            font-weight: bold;
+            margin-bottom: 20px;
+        }
+        .order-details {
+            background-color: #f8f9fa;
+            padding: 20px;
+            border-radius: 8px;
+            margin: 20px 0;
+        }
+        .plan-info {
+            background-color: #e8f5e8;
+            padding: 15px;
+            border-radius: 8px;
+            border-left: 4px solid #15A266;
+            margin: 15px 0;
+        }
+        .plan-name {
+            font-size: 1.3em;
+            font-weight: bold;
+            color: #15A266;
+            margin-bottom: 5px;
+        }
+        .plan-price {
+            font-size: 1.1em;
+            font-weight: bold;
+            color: #333;
+        }
+        .feature-list {
+            list-style: none;
+            padding: 0;
+        }
+        .feature-list li {
+            padding: 5px 0;
+            padding-left: 20px;
+            position: relative;
+        }
+        .feature-list li:before {
+            content: "✓";
+            color: #15A266;
+            font-weight: bold;
+            position: absolute;
+            left: 0;
+        }
+        .next-steps {
+            background-color: #fff3cd;
+            border: 1px solid #ffeaa7;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 20px 0;
+        }
+        .contact-info {
+            background-color: #f0f8f4;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 20px 0;
+        }
+        .footer {
+            text-align: center;
+            margin-top: 30px;
+            padding-top: 20px;
+            border-top: 1px solid #eee;
+            color: #666;
+            font-size: 0.9em;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <div class="logo">💧</div>
+            <h1 class="title">¡Compra Confirmada!</h1>
+            <div class="success-badge">✅ Transacción Exitosa</div>
+        </div>
+
+        <div class="content">
+            <p>Hola <strong>{{nombre}}</strong>,</p>
+            
+            <p>¡Gracias por tu compra! Hemos recibido tu pedido y te confirmamos que tu sistema de riego automático está siendo procesado.</p>
+
+            <div class="order-details">
+                <h3 style="color: #15A266; margin-top: 0;">Detalles del Pedido</h3>
+                <p><strong>Fecha:</strong> {{fecha}}</p>
+                <p><strong>Email:</strong> {{email}}</p>
+            </div>
+
+            <div class="plan-info">
+                <div class="plan-name">{{plan.name}}</div>
+                <div class="plan-price">{{plan.price}} - {{plan.description}}</div>
+                <ul class="feature-list">
+                    {{#each plan.features}}
+                    <li>{{this}}</li>
+                    {{/each}}
+                </ul>
+            </div>
+
+            <div class="next-steps">
+                <h4 style="color: #856404; margin-top: 0;">📋 Próximos Pasos:</h4>
+                <ol>
+                    <li><strong>Confirmación del pedido:</strong> Recibirás un email de confirmación en las próximas 24 horas.</li>
+                    <li><strong>Procesamiento:</strong> Tu pedido será procesado y preparado para envío.</li>
+                    <li><strong>Envío:</strong> Te enviaremos el número de seguimiento por email.</li>
+                    <li><strong>Instalación:</strong> Recibirás una guía de instalación paso a paso.</li>
+                    <li><strong>Soporte:</strong> Nuestro equipo estará disponible para ayudarte.</li>
+                </ol>
+            </div>
+
+            <div class="contact-info">
+                <h4 style="color: #15A266; margin-top: 0;">📞 ¿Necesitas Ayuda?</h4>
+                <p>Si tienes alguna pregunta sobre tu pedido o necesitas asistencia:</p>
+                <ul>
+                    <li><strong>Email:</strong> soporte@homegardener.com</li>
+                    <li><strong>Teléfono:</strong> +1 (555) 123-4567</li>
+                    <li><strong>Horario:</strong> Lunes a Viernes, 9:00 AM - 6:00 PM</li>
+                </ul>
+            </div>
+
+            <p style="text-align: center; margin-top: 30px;">
+                <strong>¡Gracias por confiar en Home Gardener!</strong><br>
+                Estamos emocionados de ayudarte a crear el jardín perfecto.
+            </p>
+        </div>
+
+        <div class="footer">
+            <p>Este correo fue enviado automáticamente desde Home Gardener.</p>
+            <p>Mantén este email como comprobante de tu compra.</p>
+            <p>&copy; 2025 Home Gardener. Todos los derechos reservados.</p>
+        </div>
+    </div>
+</body>
+</html>

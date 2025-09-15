@@ -98,11 +98,17 @@ export default function PerfilScreen({ navigation, baseUrl = process.env.EXPO_PU
         <Text style={styles.title}>Sistema de riego</Text>
         <Text style={styles.subtitle}>¿Quiere un sistema de riego?</Text>
 
-        <TouchableOpacity style={styles.boton}>
+        <TouchableOpacity 
+          style={styles.boton}
+          onPress={() => navigation.navigate("InfoSistemaRiego")}
+        >
           <Text style={styles.botonText}>Conoce más</Text>
         </TouchableOpacity>
 
-        <TouchableOpacity style={styles.boton}>
+        <TouchableOpacity 
+          style={styles.boton}
+          onPress={() => navigation.navigate("ComprarSistemaRiego")}
+        >
           <Text style={styles.botonText}>Comprar</Text>
         </TouchableOpacity>
       </View>

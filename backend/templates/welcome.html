@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bienvenido a Home Gardener</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f8f9fa;
+        }
+        .container {
+            background-color: #ffffff;
+            border-radius: 10px;
+            padding: 30px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        .logo {
+            font-size: 2.5em;
+            color: #15A266;
+            margin-bottom: 10px;
+        }
+        .title {
+            color: #15A266;
+            font-size: 1.8em;
+            margin-bottom: 20px;
+        }
+        .content {
+            margin-bottom: 25px;
+        }
+        .feature {
+            display: flex;
+            align-items: center;
+            margin-bottom: 15px;
+            padding: 10px;
+            background-color: #f0f8f4;
+            border-radius: 8px;
+        }
+        .feature-icon {
+            font-size: 1.5em;
+            margin-right: 15px;
+            color: #15A266;
+        }
+        .feature-text {
+            flex: 1;
+        }
+        .cta-button {
+            display: inline-block;
+            background-color: #15A266;
+            color: white;
+            padding: 15px 30px;
+            text-decoration: none;
+            border-radius: 8px;
+            font-weight: bold;
+            text-align: center;
+            margin: 20px 0;
+        }
+        .footer {
+            text-align: center;
+            margin-top: 30px;
+            padding-top: 20px;
+            border-top: 1px solid #eee;
+            color: #666;
+            font-size: 0.9em;
+        }
+        .social-links {
+            margin: 20px 0;
+        }
+        .social-links a {
+            color: #15A266;
+            text-decoration: none;
+            margin: 0 10px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <div class="logo">🌱</div>
+            <h1 class="title">¡Bienvenido a Home Gardener!</h1>
+        </div>
+
+        <div class="content">
+            <p>Hola <strong>{{nombre}}</strong>,</p>
+            
+            <p>¡Nos complace darte la bienvenida a Home Gardener! Tu cuenta ha sido creada exitosamente con el email: <strong>{{email}}</strong></p>
+
+            <p>Ahora puedes disfrutar de todas las funcionalidades que tenemos para ti:</p>
+
+            <div class="feature">
+                <span class="feature-icon">📱</span>
+                <div class="feature-text">
+                    <strong>Gestión inteligente de plantas</strong><br>
+                    Registra y monitorea todas tus plantas desde la aplicación
+                </div>
+            </div>
+
+            <div class="feature">
+                <span class="feature-icon">💧</span>
+                <div class="feature-text">
+                    <strong>Recordatorios de riego</strong><br>
+                    Recibe notificaciones cuando tus plantas necesiten agua
+                </div>
+            </div>
+
+            <div class="feature">
+                <span class="feature-icon">📊</span>
+                <div class="feature-text">
+                    <strong>Monitoreo de salud</strong><br>
+                    Mantén un seguimiento del estado de tus plantas
+                </div>
+            </div>
+
+            <div class="feature">
+                <span class="feature-icon">🤖</span>
+                <div class="feature-text">
+                    <strong>Asistente inteligente</strong><br>
+                    Obtén consejos personalizados para el cuidado de tus plantas
+                </div>
+            </div>
+
+            <div class="feature">
+                <span class="feature-icon">🛒</span>
+                <div class="feature-text">
+                    <strong>Sistemas de riego automático</strong><br>
+                    Descubre nuestras soluciones de riego inteligente
+                </div>
+            </div>
+
+            <div style="text-align: center;">
+                <a href="#" class="cta-button">Comenzar a usar la app</a>
+            </div>
+        </div>
+
+        <div class="social-links" style="text-align: center;">
+            <p>¡Síguenos para más consejos de jardinería!</p>
+            <a href="#">Facebook</a> |
+            <a href="#">Instagram</a> |
+            <a href="#">Twitter</a>
+        </div>
+
+        <div class="footer">
+            <p>Este correo fue enviado automáticamente desde Home Gardener.</p>
+            <p>Si tienes alguna pregunta, no dudes en contactarnos.</p>
+            <p>&copy; 2025 Home Gardener. Todos los derechos reservados.</p>
+        </div>
+    </div>
+</body>
+</html>
