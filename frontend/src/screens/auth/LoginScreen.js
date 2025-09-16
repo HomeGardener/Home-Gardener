@@ -60,7 +60,7 @@ export default function LoginScreen({ navigation, baseUrl = process.env.EXPO_PUB
       const success = await login(data.user, data.token);
       
       if (success) {
-        Alert.alert('Bienvenido', `Hola, ${data.user?.nombre || 'usuario'}!`);
+        Alert.alert('Bienvenido', `Hola, ${data.user?.Nombre || 'usuario'}!`);
         navigation.navigate('Home');
       } else {
         setError('Error al iniciar sesión. Por favor intenta nuevamente.');

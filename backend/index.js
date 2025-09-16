@@ -11,6 +11,7 @@ import AuthRoutes from './src/controllers/auth-controller.js';
 import PlantasRoutes from './src/controllers/plantas-controller.js';
 import SensoresRoutes from './src/controllers/sensores-controller.js';
 import AmbienteRoutes from './src/controllers/ambiente-controller.js';
+import RiegoRoutes from './src/controllers/riego-controller.js';
 
 
 // Validar variables de entorno críticas
@@ -59,6 +60,7 @@ app.use('/api/auth', AuthRoutes);
 app.use('/api/plantas', PlantasRoutes);
 app.use('/api/sensores', SensoresRoutes);
 app.use('/api/ambiente', AmbienteRoutes);
+app.use('/api/riego', RiegoRoutes);
 
 // Ruta de salud del servidor
 app.get('/health', (req, res) => {
@@ -79,6 +81,7 @@ app.get('/', (req, res) => {
     endpoints: {
       auth: '/api/auth',
       plantas: '/api/plantas',
+      riego: '/api/riego',
       health: '/health'
     }
   });

@@ -14,3 +14,5 @@ export { default as EditarPerfilScreen } from '../screens/EditarPerfilScreen';
 export { default as InfoPlantaScreen } from '../screens/InfoPlanta';
 export { default as HealthCheck } from '../screens/HealthStatus';
 export { default as ChatbotScreen } from '../screens/ChatbotScreen';
+export { default as InfoSistemaRiego } from '../screens/InfoSistemaRiego';
+export { default as ComprarSistemaRiego } from '../screens/ComprarSistemaRiego';

@@ -17,6 +17,8 @@ import {
   EditarPerfilScreen,
   InfoPlantaScreen,
   ChatbotScreen,
+  InfoSistemaRiego,
+  ComprarSistemaRiego,
 } from '../screens'
 
 import Layout from '../components/Layout';  
@@ -112,6 +114,22 @@ export default function AppNavigator() {
         component={withLayout((props) => (
           <ProtectedRoute>
             <InfoPlantaScreen {...props} />
+          </ProtectedRoute>
+        ))} 
+      />
+      <Stack.Screen 
+        name="InfoSistemaRiego" 
+        component={withLayout((props) => (
+          <ProtectedRoute>
+            <InfoSistemaRiego {...props} />
+          </ProtectedRoute>
+        ))} 
+      />
+      <Stack.Screen 
+        name="ComprarSistemaRiego" 
+        component={withLayout((props) => (
+          <ProtectedRoute>
+            <ComprarSistemaRiego {...props} />
           </ProtectedRoute>
         ))} 
       />
