@@ -2,9 +2,9 @@ import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import UserRepository from '../repositories/user-repository.js';
 import {validaciones} from '../utils/validaciones.js'
-
 import AppError from '../utils/AppError.js';
 import { StatusCodes } from 'http-status-codes';
+import StorageService from './storage-service.js'
 
 
 
@@ -12,6 +12,7 @@ const JWT_SECRET = process.env.JWT_SECRET || 'clave_supersecreta';
 
 const validator = new validaciones();
 const userRepo = new UserRepository();
+const storageServ = new StorageService();
 
 
 export default class AuthService {
@@ -21,6 +22,7 @@ export default class AuthService {
     const nombreValid = validator.isValidString(nombre);
     const direccionValid = validator.isValidString(direccion);
     
+
     if (!emailValid || !passwordValid || !nombreValid || !direccionValid)
       throw new AppError('Formato de campos inválido', StatusCodes.BAD_REQUEST);
   
@@ -29,12 +31,16 @@ export default class AuthService {
   
     const hashedPassword = await bcrypt.hash(password, 10);
   
+    if(imagen){
+      const url = storageServ.uploadFile(foto, "perfil");
+    }
+
     const newUser = await userRepo.create(
       nombre.trim(),
       email.toLowerCase().trim(),
       hashedPassword,
       direccion.trim(),
-      imagen || null 
+      url || null 
     );
   
     const token = jwt.sign({ ID: newUser.ID, email: newUser.Email }, JWT_SECRET, { expiresIn: '1d' });
@@ -72,7 +78,8 @@ export default class AuthService {
     return user;
   }
 
-  async updateProfile(id, { nombre, email, password, direccion }) {
+
+  async updateProfile(id, { nombre, email, password, direccion, foto }) {
     let updateFields = {};
 
     if (email) {
@@ -98,7 +105,12 @@ export default class AuthService {
       throw new AppError('La direccion debe tener al menos 3 caracteres', StatusCodes.BAD_REQUEST);
       updateFields.Direccion = direccion.trim();
     }
-    
+
+    if(foto){
+      const url = storageServ.uploadFile(foto, "perfil");
+      updateFields.Foto = url.trim();
+
+    }
 
     if (Object.keys(updateFields).length === 0)
       throw new AppError('No hay campos para actualizar', StatusCodes.BAD_REQUEST);

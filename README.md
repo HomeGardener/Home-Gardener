@@ -180,3 +180,5 @@ Si tienes problemas o preguntas:
 ---
 
 **🌱 ¡Haz que tu jardín sea inteligente con Home Gardener! 🌱**
+
+ 

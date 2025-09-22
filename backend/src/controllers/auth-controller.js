@@ -2,23 +2,14 @@ import { Router } from 'express';
 import { StatusCodes } from 'http-status-codes';
 import AuthService from '../services/auth-service.js';
 import authenticateToken from '../middlewares/auth.js';
-import { uploadFile } from '../utils/upload.js'; // <--- importamos
 import mailService from '../services/mail-service.js';
 
 const router = Router();
 const authService = new AuthService();
 
-router.post('/register', (req, res) => {
-  const upload = uploadFile('Foto'); // Multer espera el campo 'Foto'
 
-  upload(req, res, async (err) => {
-    if (err) {
-      return res.status(StatusCodes.BAD_REQUEST).json({ 
-        success: false, 
-        message: err.message, 
-        token: '' 
-      });
-    }
+
+router.post('/register', (req, res) => {
 
     try {
       // Crear objeto con los datos del usuario - la imagen es opcional
@@ -49,7 +40,7 @@ router.post('/register', (req, res) => {
       });
     }
   });
-});
+
 
 // Login
 router.post('/login', async (req, res) => {
