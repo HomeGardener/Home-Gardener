@@ -18,7 +18,7 @@ router.post('/register', (req, res) => {
         imagen: req.file ? req.file.filename : null 
       };
 
-      const { user, token } = await authService.register(userData);
+      const { user, token } = authService.register(userData);
 
       // Enviar correo de bienvenida (no bloquea la respuesta)
       mailService.sendWelcomeEmail(user).catch(error => {

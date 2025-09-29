@@ -32,5 +32,4 @@ export default class StorageService {
         throw err;
       }
       
-    }
-};
+    };
