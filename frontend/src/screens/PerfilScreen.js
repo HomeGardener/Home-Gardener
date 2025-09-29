@@ -5,7 +5,8 @@ import { useFocusEffect } from '@react-navigation/native';
 import { useAuth } from "../contexts/AuthContext";
 import { getApiBaseUrl } from "../services/api";
 import LogoutButton from "../components/LogoutButton";
-
+import CalendarAgenda from "../components/CalendarAgenda";
+ 
 export default function PerfilScreen({ navigation, baseUrl = process.env.EXPO_PUBLIC_API_URL }) {
   const { user, updateUser } = useAuth();
   const [loading, setLoading] = useState(!user);
@@ -93,6 +94,10 @@ export default function PerfilScreen({ navigation, baseUrl = process.env.EXPO_PU
       </TouchableOpacity>
 
       <LogoutButton navigation={navigation} />
+
+      <View style={styles.card}>
+          <CalendarAgenda userId={user?.id_usuario || user?.id || "local"} />
+      </View>
 
       <View style={{ marginTop: 30, alignItems: "center" }}>
         <Text style={styles.title}>Sistema de riego</Text>
