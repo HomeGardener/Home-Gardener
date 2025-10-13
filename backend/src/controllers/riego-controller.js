@@ -1,7 +1,6 @@
 import { Router } from 'express';
 import { StatusCodes } from 'http-status-codes';
 import authenticateToken from '../middlewares/auth.js';
-import mailService from '../services/mail-service.js';
 
 const router = Router();
 
@@ -72,15 +71,12 @@ router.post('/confirmar-compra', authenticateToken, async (req, res) => {
     // Aquí podrías guardar la compra en la base de datos
     // const compra = await guardarCompra(user.ID, selectedPlan);
 
-    // Enviar correo de confirmación de compra
-    const mailResult = await mailService.sendPurchaseConfirmation(user, selectedPlan);
+    // Funcionalidad de correo de confirmación removida
 
     res.status(StatusCodes.OK).json({
       success: true,
       message: 'Compra confirmada exitosamente',
-      plan: selectedPlan,
-      mailSent: mailResult.success,
-      mailMessage: mailResult.message
+      plan: selectedPlan
     });
 
   } catch (error) {
@@ -105,13 +101,11 @@ router.post('/recordatorio-riego', authenticateToken, async (req, res) => {
       proximo_riego: nextWatering
     };
 
-    const mailResult = await mailService.sendWateringReminder(user, plantData);
+    // Funcionalidad de correo de recordatorio removida
 
     res.status(StatusCodes.OK).json({
       success: true,
-      message: 'Recordatorio de riego enviado',
-      mailSent: mailResult.success,
-      mailMessage: mailResult.message
+      message: 'Recordatorio de riego procesado (funcionalidad de correo removida)'
     });
 
   } catch (error) {
@@ -134,13 +128,11 @@ router.post('/alerta-salud', authenticateToken, async (req, res) => {
       nombre: plantName
     };
 
-    const mailResult = await mailService.sendHealthAlert(user, plantData, alertType);
+    // Funcionalidad de correo de alerta removida
 
     res.status(StatusCodes.OK).json({
       success: true,
-      message: 'Alerta de salud enviada',
-      mailSent: mailResult.success,
-      mailMessage: mailResult.message
+      message: 'Alerta de salud procesada (funcionalidad de correo removida)'
     });
 
   } catch (error) {
@@ -168,12 +160,11 @@ router.post('/solicitar-reset-password', async (req, res) => {
       Email: email
     };
 
-    const mailResult = await mailService.sendPasswordReset(user, resetToken);
+    // Funcionalidad de correo de restablecimiento removida
 
     res.status(StatusCodes.OK).json({
       success: true,
-      message: 'Si el email existe, se ha enviado un enlace de restablecimiento',
-      mailSent: mailResult.success
+      message: 'Solicitud de restablecimiento procesada (funcionalidad de correo removida)'
     });
 
   } catch (error) {
@@ -193,13 +184,11 @@ router.post('/correo-personalizado', authenticateToken, async (req, res) => {
     // Aquí podrías verificar si el usuario es administrador
     // if (!req.user.esAdmin) { ... }
 
-    const mailResult = await mailService.sendCustomEmail(to, subject, content, attachments);
+    // Funcionalidad de correo personalizado removida
 
     res.status(StatusCodes.OK).json({
       success: true,
-      message: 'Correo personalizado enviado',
-      mailSent: mailResult.success,
-      mailMessage: mailResult.message
+      message: 'Solicitud de correo personalizado procesada (funcionalidad de correo removida)'
     });
 
   } catch (error) {
