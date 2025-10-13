@@ -15,6 +15,7 @@ export default class StorageService {
     this.bucketName = 'fotos-usuarios';
   }
 
+
   /**
    * Sube un archivo a Supabase Storage
    * @param {Object} file - Archivo desde multer (req.file)
@@ -34,9 +35,8 @@ export default class StorageService {
       }
 
       // Verificar si Supabase está configurado correctamente
-      if (!process.env.SUPABASE_URL || process.env.SUPABASE_URL.includes('placeholder')) {
-        console.warn('Supabase no está configurado, usando URL de placeholder');
-        // Retornar una URL de placeholder para desarrollo
+      if (!process.env.SUPABASE_URL || !process.env.SUPABASE_SERVICE_ROLE_KEY) {
+        console.warn('⚠️ Supabase no está configurado, usando URL de placeholder');
         return `https://via.placeholder.com/300x300/15A266/FFFFFF?text=${folder}`;
       }
 
@@ -50,12 +50,12 @@ export default class StorageService {
         .from(this.bucketName)
         .upload(fileName, file.buffer, {
           contentType: file.mimetype,
-          upsert: false // No sobrescribir archivos existentes
+          upsert: false
         });
 
       if (error) {
         console.error('Error subiendo archivo a Supabase:', error);
-        throw new Error('Error al subir archivo al almacenamiento');
+        throw new Error(`Error al subir archivo: ${error.message}`);
       }
 
       // Obtener URL pública
