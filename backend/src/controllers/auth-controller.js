@@ -2,7 +2,6 @@ import { Router } from 'express';
 import { StatusCodes } from 'http-status-codes';
 import AuthService from '../services/auth-service.js';
 import authenticateToken from '../middlewares/auth.js';
-import mailService from '../services/mail-service.js';
 
 const router = Router();
 const authService = new AuthService();
@@ -20,10 +19,7 @@ router.post('/register', (req, res) => {
 
       const { user, token } = authService.register(userData);
 
-      // Enviar correo de bienvenida (no bloquea la respuesta)
-      mailService.sendWelcomeEmail(user).catch(error => {
-        console.error('Error enviando correo de bienvenida:', error);
-      });
+      // Funcionalidad de correo de bienvenida removida
 
       res.status(StatusCodes.CREATED).json({
         success: true,
