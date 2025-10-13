@@ -2,22 +2,22 @@ import { Router } from 'express';
 import { StatusCodes } from 'http-status-codes';
 import AuthService from '../services/auth-service.js';
 import authenticateToken from '../middlewares/auth.js';
+import { uploadFile, validateFile, validateOptionalFile, handleUploadError } from '../middlewares/upload.js';
 
 const router = Router();
 const authService = new AuthService();
 
 
 
-router.post('/register', (req, res) => {
-
+router.post('/register', uploadFile('imagen'), validateOptionalFile, handleUploadError, async (req, res) => {
     try {
       // Crear objeto con los datos del usuario - la imagen es opcional
       const userData = { 
         ...req.body, 
-        imagen: req.file ? req.file.filename : null 
+        imagen: req.file || null 
       };
 
-      const { user, token } = authService.register(userData);
+      const { user, token } = await authService.register(userData);
 
       // Funcionalidad de correo de bienvenida removida
 
@@ -79,9 +79,14 @@ router.get('/profile', authenticateToken, async (req, res) => {
 });
 
 // Actualizar perfil
-router.put('/profile', authenticateToken, async (req, res) => {
+router.put('/profile', authenticateToken, uploadFile('imagen'), validateOptionalFile, handleUploadError, async (req, res) => {
   try {
-    const user = await authService.updateProfile(req.user.ID, req.body);
+    const userData = { 
+      ...req.body, 
+      imagen: req.file || null 
+    };
+    
+    const user = await authService.updateProfile(req.user.ID, userData);
     res.status(StatusCodes.OK).json({ 
       success: true,
       message: 'Usuario actualizado exitosamente', 
@@ -94,7 +99,8 @@ router.put('/profile', authenticateToken, async (req, res) => {
         success: false,
         message: error.message,
         token: ''
-    });  }
+    });  
+  }
 });
 
 export default router;

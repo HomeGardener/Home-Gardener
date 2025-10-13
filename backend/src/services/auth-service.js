@@ -31,20 +31,30 @@ export default class AuthService {
   
     const hashedPassword = await bcrypt.hash(password, 10);
   
-    if(imagen){
-      const url = storageServ.uploadFile(foto, "perfil");
-    }
-
-    const newUser = await userRepo.create(
+    // Crear usuario temporal para obtener ID
+    const tempUser = await userRepo.create(
       nombre.trim(),
       email.toLowerCase().trim(),
       hashedPassword,
       direccion.trim(),
-      url || null 
+      null // imagen será null inicialmente
     );
-  
-    const token = jwt.sign({ ID: newUser.ID, email: newUser.Email }, JWT_SECRET, { expiresIn: '1d' });
-    return { user: newUser, token };
+
+    let imageUrl = null;
+    if(imagen){
+      try {
+        imageUrl = await storageServ.uploadFile(imagen, "perfil", tempUser.ID);
+        // Actualizar usuario con la URL de la imagen
+        await userRepo.update(tempUser.ID, { Foto: imageUrl });
+        tempUser.Foto = imageUrl;
+      } catch (error) {
+        console.error('Error subiendo imagen de perfil:', error);
+        // No fallar el registro si la imagen falla, solo loggear el error
+      }
+    }
+
+    const token = jwt.sign({ ID: tempUser.ID, email: tempUser.Email }, JWT_SECRET, { expiresIn: '1d' });
+    return { user: tempUser, token };
   }
   
 
@@ -79,7 +89,7 @@ export default class AuthService {
   }
 
 
-  async updateProfile(id, { nombre, email, password, direccion, foto }) {
+  async updateProfile(id, { nombre, email, password, direccion, imagen }) {
     let updateFields = {};
 
     if (email) {
@@ -102,14 +112,18 @@ export default class AuthService {
 
     if (direccion) {
       if (!validator.isValidString(direccion))
-      throw new AppError('La direccion debe tener al menos 3 caracteres', StatusCodes.BAD_REQUEST);
+        throw new AppError('La direccion debe tener al menos 3 caracteres', StatusCodes.BAD_REQUEST);
       updateFields.Direccion = direccion.trim();
     }
 
-    if(foto){
-      const url = storageServ.uploadFile(foto, "perfil");
-      updateFields.Foto = url.trim();
-
+    if(imagen){
+      try {
+        const imageUrl = await storageServ.uploadFile(imagen, "perfil", id);
+        updateFields.Foto = imageUrl;
+      } catch (error) {
+        console.error('Error subiendo nueva imagen de perfil:', error);
+        throw new AppError('Error al subir la imagen de perfil', StatusCodes.INTERNAL_SERVER_ERROR);
+      }
     }
 
     if (Object.keys(updateFields).length === 0)

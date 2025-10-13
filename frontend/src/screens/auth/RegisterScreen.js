@@ -69,7 +69,7 @@ export default function RegisterScreen({ navigation, baseUrl = process.env.EXPO_
       formData.append('direccion', direccion);
 
       if (foto) {
-        formData.append('Foto', {
+        formData.append('imagen', {
           uri: foto.uri,
           name: foto.fileName || `foto.${foto.uri.split('.').pop() || 'jpg'}`,
           type: foto.type,

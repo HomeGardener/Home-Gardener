@@ -3,6 +3,11 @@ import DB_config from '../configs/db_configs.js';
 
 const pool = new Pool(DB_config);
 
+// Manejar errores de conexión
+pool.on('error', (err) => {
+  console.error('Error inesperado en el cliente de la base de datos:', err);
+});
+
 export default class UserRepository {
     async findByEmail (email)  {
     const result = await pool.query(

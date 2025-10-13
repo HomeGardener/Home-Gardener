@@ -58,7 +58,7 @@ export default function HomeScreen({ navigation, baseUrl = process.env.EXPO_PUBL
       <View style={styles.greetingBox}>
         <Text style={styles.greetingText}>Bienvenido/a a Home</Text>
         <Text style={styles.greetingText}>Gardener</Text>
-        <Text style={styles.greetingName}>{user.nombre}</Text>
+        <Text style={styles.greetingName}>{user.Nombre}</Text>
       </View>
 
       {/* Lista de plantas */}
