@@ -10,10 +10,7 @@
     "test": "echo \"Error: no test specified\" && exit 1",
     "lint": "echo \"Linting no configurado\" && exit 0",
     "clean": "rm -rf node_modules package-lock.json",
-    "reinstall": "npm run clean && npm install", 
-    "uploadInfoEnfermedades": "node ./src/loaders/LoadEnfermedades.js",
-    "uploadInfoEspecies": "node ./src/loaders/LoadHuertaEspecies.js"
-
+    "reinstall": "npm run clean && npm install"
   },
   "keywords": [
     "gardening",

@@ -1,16 +1,14 @@
 import axios from "axios";
 import * as cheerio from "cheerio";
 import { Pool } from "pg";
-import dotenv from "dotenv";
 import { uploadImageToSupabase } from "../utils/uploadImageToSupabase.js";
 
-dotenv.config();
 
 export class EnfermedadesLoader {
   constructor() {
     this.pool = new Pool({
       user: process.env.DB_USER,
-      password: process.env.DB_password,
+      password: process.env.DB_PASSWORD,
       host: process.env.DB_HOST,
       database: process.env.DB_NAME,
       port: 5432,
@@ -56,71 +54,28 @@ export class EnfermedadesLoader {
     }
   }
 
-  async fetchPlantwise() {
-    console.log("🌿 Obteniendo datos desde Plantwise...");
-    const baseUrl =
-      "https://plantwiseplusknowledgebank.org/action/doSearch?SeriesKey=plantwise&PrimaryLanguageFacetField2=es";
-    const { data } = await axios.get(baseUrl);
-    const $ = cheerio.load(data);
+    
+  async function fetchPerenual() {
+    console.log("🌱 Obteniendo datos desde Perenual...");
+    const apiKey = process.env.PERENUAL_KEY;
+    const url = `https://perenual.com/api/pest-disease-list?key=${apiKey}`;
+    const { data } = await axios.get(url);
 
-    const links = [];
-    $(".item-title a").each((_, el) => {
-      const href = $(el).attr("href");
-      if (href && href.includes("/openurl"))
-        links.push("https://plantwiseplusknowledgebank.org" + href);
-    });
-
-    const limit = 10;
-    const articles = [];
-
-    for (const link of links.slice(0, limit)) {
-      try {
-        const res = await axios.get(link);
-        const $$ = cheerio.load(res.data);
-
-        const title = $$("h1.article-title").text().trim();
-        const [nombre, especie] = title.split(" - ").map((t) => t?.trim() || "");
-        const descripcion = $$("h2:contains('Recognize the problem')")
-          .nextUntil("h2")
-          .text()
-          .replace(/\s+/g, " ")
-          .trim();
-        const solucion = $$("h2:contains('Management')")
-          .nextUntil("h2")
-          .text()
-          .replace(/\s+/g, " ")
-          .trim();
-        const fotoUrl = $$("img.article-image").attr("src");
-        const fullUrl = fotoUrl?.startsWith("http")
-          ? fotoUrl
-          : fotoUrl
-          ? "https://plantwiseplusknowledgebank.org" + fotoUrl
-          : null;
-
-        const foto = fullUrl ? await uploadImageToSupabase(fullUrl, "enfermedades") : null;
-
-        articles.push({
-          nombre: nombre || "Desconocido",
-          nombreCientifico: especie || "",
-          descripcion: descripcion || "Sin descripción disponible.",
-          solucion: solucion || "Sin solución especificada.",
-          especies: especie ? [especie] : [],
-          fuente: "plantwiseplusknowledgebank",
-          foto,
-        });
-
-        console.log(`📄 Extraído: ${nombre}`);
-      } catch (err) {
-        console.error("❌ Error extrayendo artículo:", link, err.message);
-      }
-    }
-
-    return articles;
+    return data.data.map((item) => ({
+      nombre: item.common_name || item.name,
+      nombreCientifico: item.scientific_name || "",
+      descripcion: item.description || "",
+      solucion: item.management || "",
+      especies: item.hosts ? item.hosts.map((h) => h.name) : [],
+      fuente: "perenual",
+      // foto: null,
+    }));
   }
+
 
   async run() {
     console.log("🚀 Iniciando sincronización de enfermedades...");
-    const enfermedades = await this.fetchPlantwise();
+    const enfermedades = await this.fetchPerenual();
     for (const e of enfermedades) await this.upsertEnfermedad(e);
     console.log("✅ Sincronización completada.");
     process.exit();

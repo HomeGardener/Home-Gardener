@@ -5,15 +5,23 @@ import { uploadImageToSupabase } from "../utils/uploadImageToSupabase.js";
 
 export class HuertaSpeciesLoader {
   constructor() {
-    this.supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_KEY);
-    this.agent = new https.Agent({ rejectUnauthorized: false });
+    this.supabase = createClient( process.env.SUPABASE_URL, process.env.SUPABASE_KEY);
+    this.agent = new https.Agent({ rejectUnauthorized: false });    
+  }
+  async obtenerEspeciesDesdeBD() {
+    console.log("Obteniendo especies desde la base de datos");
+    const { data, error } = await this.supabase
+      .from("TipoEspecifico")
+      .select("Nombre");
 
-    this.especies = [
-      "Frutilla", "Albahaca", "Romero", "Cilantro", "Tomate", "Zanahoria",
-      "Rabanito", "Acelga", "Tomate cherry", "Perejil", "Menta", "Lechuga",
-      "Pimiento", "Berenjena", "Zapallo", "Lavanda", "Frambuesa", "Repollo",
-      "Pepino", "Zucchini", "Choclo", "Poroto", "Zapallito", "Cebolla", "Brócoli"
-    ];
+    if (error) {
+      console.error("❌ Error al consultar especies:", error.message);
+      return [];
+    }
+
+    const nombres = data.map((e) => e.Nombre).filter(Boolean);
+    console.log(`✅ Se encontraron ${nombres.length} especies.`);
+    return nombres;
   }
 
   async obtenerDatosPlanta(nombre) {
@@ -90,6 +98,7 @@ export class HuertaSpeciesLoader {
 
   async run() {
     console.log("🌿 Cargando especies de huerta...");
+    const especies = await this.obtenerEspeciesDesdeBD();
     for (const nombre of this.especies) {
       const datos = await this.obtenerDatosPlanta(nombre);
       if (datos) await this.insertarEnSupabase(datos);
