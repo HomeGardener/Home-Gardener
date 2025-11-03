@@ -124,8 +124,9 @@ export default function ChatbotScreen({ navigation }) {
                 ]}>
                   {message.text}
                 </Text>
-                <Text style={styles.timestamp}>
-                  {formatTime(message.timestamp)}
+                <Text
+                    style={[styles.timestamp, message.sender === 'user' && styles.timestampUser]}>
+                    {formatTime(message.timestamp)}
                 </Text>
               </View>
               {message.sender === 'user' && (
@@ -273,5 +274,11 @@ const styles = StyleSheet.create({
     padding: 12,
     borderRadius: 24,
     backgroundColor: '#f0f0f0',
+  },
+  timestampUser: {
+    fontSize: 10,
+    color: 'rgba(255,255,255,0.8)', // blanco con leve transparencia
+    marginTop: 4,
+    alignSelf: 'flex-end',
   },
 });

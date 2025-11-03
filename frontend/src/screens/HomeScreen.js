@@ -9,6 +9,7 @@ import {
   TouchableOpacity 
 } from 'react-native';
 import { useAuth } from '../contexts/AuthContext';
+import CalendarAgenda from "../components/CalendarAgenda";
 
 const PLANTS = [
   { id: 1, name: "Albahaca", note: "Fue regada a las 5:02", status: "ok" },
@@ -62,26 +63,9 @@ export default function HomeScreen({ navigation, baseUrl = process.env.EXPO_PUBL
       </View>
 
       {/* Lista de plantas */}
-      <View style={styles.list}>
-        {PLANTS.map((p) => (
-          <View key={p.id} style={styles.card}>
-            <View style={styles.cardLeft}>
-              <Text style={styles.cardTitle}>{p.name}</Text>
-              <Text
-                style={[
-                  styles.cardNote,
-                  p.status === "ok" && { color: "#6c757d" },
-                  p.status === "warn" && { color: "#d39e00" },
-                  p.status === "alert" && { color: "#e35d6a" },
-                ]}
-                numberOfLines={2}
-              >
-                {p.note}
-              </Text>
-            </View>
-            <View style={[styles.statusDot, { backgroundColor: statusColor[p.status] }]} />
-          </View>
-        ))}
+      
+      <View style={styles.card}>
+          <CalendarAgenda userId={user?.id_usuario || user?.id || "local"} />
       </View>
 
       {/* Botón para ChatBot */}
