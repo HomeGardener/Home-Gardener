@@ -1,5 +1,26 @@
+// /auth/ForgotPasswordScreen.js
 import React, { useState } from 'react';
-import { View, TextInput, Button, Text, StyleSheet, Alert } from 'react-native';
+import {
+  View,
+  TextInput,
+  Text,
+  StyleSheet,
+  Alert,
+  TouchableOpacity,
+  KeyboardAvoidingView,
+  Platform
+} from 'react-native';
+
+const COLORS = {
+  bg: '#EAF8EE',
+  card: '#FFFFFF',
+  border: '#E7ECEF',
+  text: '#1F2937',
+  muted: '#6B7280',
+  green: '#15A266',
+  greenDark: '#0F7C4E',
+  danger: '#EF4444',
+};
 
 export default function ForgotPasswordScreen({ navigation }) {
   const [email, setEmail] = useState('');
@@ -12,13 +33,12 @@ export default function ForgotPasswordScreen({ navigation }) {
       setError('Por favor ingresa tu email');
       return;
     }
-
     setLoading(true);
-    const { error } = await supabase.auth.resetPasswordForEmail(email.trim());
+    const { error: sbError } = await supabase.auth.resetPasswordForEmail(email.trim());
     setLoading(false);
 
-    if (error) {
-      setError(error.message);
+    if (sbError) {
+      setError(sbError.message);
     } else {
       Alert.alert(
         'Correo enviado',
@@ -28,48 +48,136 @@ export default function ForgotPasswordScreen({ navigation }) {
     }
   };
 
+  const isEmailValid = /^\S+@\S+\.\S+$/.test(email);
+
   return (
-    <View style={styles.container}>
-      <Text style={styles.title}>Recuperar contraseña</Text>
-      <TextInput
-        placeholder="Email"
-        value={email}
-        onChangeText={setEmail}
-        keyboardType="email-address"
-        autoCapitalize="none"
-        style={styles.input}
-      />
-      {error && <Text style={styles.error}>{error}</Text>}
-      <Button title={loading ? 'Enviando...' : 'Enviar correo'} onPress={handleResetPassword} disabled={loading} />
+    <View style={s.screen}>
+      <KeyboardAvoidingView
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        style={{ flex: 1 }}
+      >
+        <View style={s.card}>
+          <Text style={s.title}>Recuperar contraseña</Text>
+          <Text style={s.subtitle}>
+            Ingresá tu correo y te enviaremos un enlace para restablecerla.
+          </Text>
+
+          <View style={[
+            s.inputWrap,
+            email.length > 0 && !isEmailValid && { borderColor: COLORS.danger }
+          ]}>
+            <TextInput
+              placeholder="tuemail@ejemplo.com"
+              placeholderTextColor="#9CA3AF"
+              value={email}
+              onChangeText={setEmail}
+              keyboardType="email-address"
+              autoCapitalize="none"
+              autoCorrect={false}
+              style={s.input}
+              editable={!loading}
+            />
+          </View>
+
+          {error ? <Text style={s.error}>{error}</Text> : null}
+
+          <TouchableOpacity
+            style={[s.btnPrimary, (loading || !isEmailValid) && s.btnDisabled]}
+            onPress={handleResetPassword}
+            disabled={loading || !isEmailValid}
+            activeOpacity={0.9}
+          >
+            <Text style={s.btnPrimaryText}>
+              {loading ? 'Enviando...' : 'Enviar enlace'}
+            </Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={s.btnSecondary}
+            onPress={() => navigation.navigate('Login')}
+            activeOpacity={0.8}
+          >
+            <Text style={s.btnSecondaryText}>Volver a iniciar sesión</Text>
+          </TouchableOpacity>
+        </View>
+      </KeyboardAvoidingView>
     </View>
   );
 }
 
-const styles = StyleSheet.create({
-  container: {
-    flex:1,
-    padding: 20,
-    justifyContent:'center',
-    backgroundColor: '#f0f4f8',
+const s = StyleSheet.create({
+  screen: {
+    flex: 1,
+    backgroundColor: COLORS.bg,
+    padding: 16,
+    justifyContent: 'center',
+  },
+  card: {
+    backgroundColor: COLORS.card,
+    borderWidth: 1,
+    borderColor: COLORS.border,
+    borderRadius: 16,
+    padding: 16,
   },
   title: {
-    fontSize: 22,
-    marginBottom: 15,
-    fontWeight: '600',
+    fontSize: 20,
+    fontWeight: '800',
+    color: COLORS.text,
     textAlign: 'center',
-    color: '#2e7d32',
+  },
+  subtitle: {
+    marginTop: 8,
+    fontSize: 14,
+    color: COLORS.muted,
+    textAlign: 'center',
+  },
+  inputWrap: {
+    marginTop: 16,
+    backgroundColor: COLORS.card,
+    borderWidth: 1,
+    borderColor: COLORS.border,
+    borderRadius: 12,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
   },
   input: {
-    borderWidth:1,
-    borderColor:'#ccc',
-    borderRadius:5,
-    padding:10,
-    marginBottom: 12,
-    backgroundColor: 'white',
+    fontSize: 16,
+    color: COLORS.text,
   },
   error: {
-    color: 'red',
-    marginBottom: 10,
+    marginTop: 8,
+    color: COLORS.danger,
     textAlign: 'center',
-  }
+    fontSize: 13,
+  },
+  btnPrimary: {
+    marginTop: 16,
+    height: 48,
+    borderRadius: 12,
+    backgroundColor: COLORS.green,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  btnPrimaryText: {
+    color: '#fff',
+    fontWeight: '700',
+    fontSize: 16,
+  },
+  btnDisabled: {
+    backgroundColor: '#8BCDB3',
+  },
+  btnSecondary: {
+    marginTop: 10,
+    height: 46,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: COLORS.green,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  btnSecondaryText: {
+    color: COLORS.green,
+    fontWeight: '700',
+    fontSize: 15,
+  },
 });
