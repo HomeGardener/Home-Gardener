@@ -295,7 +295,7 @@ export default function InfoScreen({ navigation }) {
           >
             <Ionicons 
               name={tab.icon} 
-              size={20} 
+              size={18}                                   // ← antes 20
               color={activeTab === tab.id ? '#fff' : '#15A266'} 
             />
             <Text style={[
@@ -321,94 +321,101 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#EAF8EE',
   },
+
+  /* HEADER */
   header: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    padding: 16,
+    paddingHorizontal: 16,
+    paddingVertical: 14,
     backgroundColor: '#fff',
     borderBottomWidth: 1,
-    borderBottomColor: '#e0e0e0',
+    borderBottomColor: '#E0E0E0',
+    elevation: 3,
   },
-  backButton: {
-    padding: 8,
-  },
+  backButton: { padding: 6 },
   headerTitle: {
-    fontSize: 18,
-    fontWeight: '600',
-    color: '#333',
+    fontSize: 20,
+    fontWeight: '700',
+    color: '#15A266',
+    letterSpacing: 0.5,
   },
-  headerSpacer: {
-    width: 40,
-  },
+  headerSpacer: { width: 32 },
+
+  /* TABS */
   tabsContainer: {
     backgroundColor: '#fff',
     borderBottomWidth: 1,
-    borderBottomColor: '#e0e0e0',
+    borderBottomColor: '#E0E0E0',
   },
   tabsContent: {
-    paddingHorizontal: 16,
-    paddingVertical: 12,
+    paddingHorizontal: 12,    // ← antes 16
+    paddingVertical: 6,       // ← antes 10/12
   },
   tab: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    marginRight: 12,
-    borderRadius: 20,
-    backgroundColor: '#f5f5f5',
-    gap: 8,
+    paddingHorizontal: 12,    // ← antes 16
+    paddingVertical: 6,       // ← antes 8
+    marginRight: 8,           // ← antes 10/12
+    borderRadius: 16,         // ← antes 25
+    backgroundColor: '#F3F4F6',
+    gap: 6,                   // ← antes 8
+    elevation: 0,             // sin sombra para que se vea más fino
   },
   activeTab: {
     backgroundColor: '#15A266',
   },
   tabText: {
-    fontSize: 14,
-    fontWeight: '500',
+    fontSize: 14,             // ← antes 15
+    fontWeight: '600',
     color: '#15A266',
   },
-  activeTabText: {
-    color: '#fff',
-  },
-  scrollView: {
-    flex: 1,
-  },
-  contentContainer: {
-    padding: 20,
-  },
+  activeTabText: { color: '#fff' },
+  
+
+  /* SCROLL PRINCIPAL */
+  scrollView: { flex: 1 },
+  contentContainer: { paddingHorizontal: 20, paddingVertical: 24 },
+
+  /* SECCIÓN */
   sectionTitle: {
     fontSize: 24,
-    fontWeight: '700',
+    fontWeight: '800',
     color: '#15A266',
-    marginBottom: 20,
+    marginBottom: 18,
     textAlign: 'center',
+    letterSpacing: 0.3,
   },
+
+  /* CARD DE INFORMACIÓN */
   infoCard: {
     backgroundColor: '#fff',
-    borderRadius: 16,
-    padding: 20,
-    marginBottom: 16,
+    borderRadius: 18,
+    paddingVertical: 18,
+    paddingHorizontal: 20,
+    marginBottom: 18,
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.08,
+    shadowRadius: 5,
     elevation: 3,
   },
   cardHeader: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 12,
-    gap: 12,
+    marginBottom: 10,
+    gap: 10,
   },
   cardTitle: {
     fontSize: 18,
-    fontWeight: '600',
+    fontWeight: '700',
     color: '#333',
   },
   cardDescription: {
-    fontSize: 16,
-    color: '#666',
-    lineHeight: 24,
+    fontSize: 15,
+    color: '#555',
+    lineHeight: 23,
   },
 });

@@ -146,7 +146,11 @@ export default function LoginScreen({ navigation, baseUrl = process.env.EXPO_PUB
                   />
                 </TouchableOpacity>
               </View>
-
+              <TouchableOpacity onPress={() => navigation.navigate('ForgotPassword')}>
+                <Text style={{ color: '#ffffff', fontWeight: '700',  marginTop: 10 }}>
+                  ¿Olvidaste tu contraseña?
+                </Text>
+              </TouchableOpacity>
               {error && <Text style={styles.error}>{error}</Text>}
             </View>
 
