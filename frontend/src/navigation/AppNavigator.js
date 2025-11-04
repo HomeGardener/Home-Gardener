@@ -19,6 +19,7 @@ import {
   ChatbotScreen,
   InfoSistemaRiego,
   ComprarSistemaRiego,
+  HistorialDeChats
 } from '../screens'
 
 import Layout from '../components/Layout';  
@@ -41,6 +42,14 @@ export default function AppNavigator() {
         component={withLayout((props) => (
           <ProtectedRoute>
             <ChatbotScreen {...props} />
+          </ProtectedRoute>
+        ))} 
+      />
+      <Stack.Screen 
+        name="HistorialDeChats" 
+        component={withLayout((props) => (
+          <ProtectedRoute>
+            <HistorialDeChats {...props} />
           </ProtectedRoute>
         ))} 
       />

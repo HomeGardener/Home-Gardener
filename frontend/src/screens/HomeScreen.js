@@ -71,7 +71,7 @@ export default function HomeScreen({ navigation, baseUrl = process.env.EXPO_PUBL
       {/* Botón para ChatBot */}
       <TouchableOpacity 
         style={styles.boton} 
-        onPress={() => navigation.navigate('Chatbot')}
+        onPress={() => navigation.navigate('HistorialDeChats')}
       >
         <Text style={styles.botonText}>Ir al ChatBot</Text>
       </TouchableOpacity>
