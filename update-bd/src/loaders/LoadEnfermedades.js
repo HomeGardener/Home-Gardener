@@ -55,7 +55,7 @@ export class EnfermedadesLoader {
   }
 
     
-  async function fetchPerenual() {
+  async fetchPerenual() {
     console.log("🌱 Obteniendo datos desde Perenual...");
     const apiKey = process.env.PERENUAL_KEY;
     const url = `https://perenual.com/api/pest-disease-list?key=${apiKey}`;

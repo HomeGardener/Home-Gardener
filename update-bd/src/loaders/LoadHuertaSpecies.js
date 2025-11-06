@@ -49,6 +49,7 @@ export class HuertaSpeciesLoader {
         Días hasta cosecha: ${g.days_to_harvest ?? "?"}
       `.trim();
 
+
       return {
         nombre: planta.common_name || planta.scientific_name || nombre,
         info: `Luz: ${g.light ?? "?"}/10 | Crecimiento: ${g.growth_rate ?? "?"}`,
@@ -81,28 +82,32 @@ export class HuertaSpeciesLoader {
       return;
     }
 
-    const idPlanta = data.ID;
-
+          
     const { error: guiaError } = await this.supabase
-      .from("Guía")
-      .insert({
-        Título: `Guía de cultivo de ${datos.nombre}`,
-        Contenido: datos.contenidoGuia,
-        Multimedia: datos.foto,
-        IdPlanta: idPlanta
-      });
+    .from("Guía")
+    .insert({
+      Título: `Guía de cultivo de ${datos.nombre}`,
+      Contenido: datos.contenidoGuia,
+      Multimedia: datos.foto,
+      IdPlanta: idPlanta
+    });
 
-    if (guiaError) console.error("⚠️ Error al insertar Guía:", guiaError.message);
-    else console.log(`✅ Insertado ${datos.nombre} con guía`);
+  if (guiaError) console.error("⚠️ Error al insertar Guía:", guiaError.message);
+  else console.log(`✅ Insertado ${datos.nombre} con guía`);
+
+
+    const idPlanta = data.ID;
   }
 
   async run() {
     console.log("🌿 Cargando especies de huerta...");
     const especies = await this.obtenerEspeciesDesdeBD();
-    for (const nombre of this.especies) {
+    if(especies){
+      for (const nombre of this.especies) {
       const datos = await this.obtenerDatosPlanta(nombre);
       if (datos) await this.insertarEnSupabase(datos);
     }
     console.log("✅ Carga completa.");
   }
+}
 }
