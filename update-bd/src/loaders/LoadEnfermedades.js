@@ -28,12 +28,12 @@ export class EnfermedadesLoader {
         const nuevasFuentes = Array.from(new Set([...(enfermedad.Fuente || []), fuente]));
         const nuevasDescripciones = Array.from(new Set([...(enfermedad.Descripcion || []), descripcion]));
         const nuevasSoluciones = Array.from(new Set([...(enfermedad.Solucion || []), solucion]));
-        const nuevasEspecies = Array.from(new Set([...(enfermedad.especiesComunes || []), ...especies]));
+        const nuevasEspecies = Array.from(new Set([...(enfermedad.EspeciesComunes || []), ...especies]));
         const nuevaFoto = foto || enfermedad.Foto || null;
 
         await client.query(
           `UPDATE "Enfermedad"
-           SET "Fuente"=$1, "Descripcion"=$2, "Solucion"=$3, "especiesComunes"=$4, "Foto"=$5
+           SET "Fuente"=$1, "Descripcion"=$2, "Solucion"=$3, "EspeciesComunes"=$4, "Foto"=$5
            WHERE "ID"=$6`,
           [nuevasFuentes, nuevasDescripciones, nuevasSoluciones, nuevasEspecies, nuevaFoto, enfermedad.ID]
         );
@@ -41,7 +41,7 @@ export class EnfermedadesLoader {
         console.log(`🔄 Actualizada: ${nombre}`);
       } else {
         await client.query(
-          `INSERT INTO "Enfermedad" ("Fuente","Nombre","Descripcion","Solucion","especiesComunes","NombreCientifico","Foto")
+          `INSERT INTO "Enfermedad" ("Fuente","Nombre","Descripcion","Solucion","EspeciesComunes","NombreCientifico","Foto")
            VALUES ($1,$2,$3,$4,$5,$6,$7)`,
           [[fuente], nombre, [descripcion], [solucion], especies, nombreCientifico, foto]
         );
@@ -65,7 +65,7 @@ export class EnfermedadesLoader {
       nombre: item.common_name || item.name,
       nombreCientifico: item.scientific_name || "",
       descripcion: item.description || "",
-      solucion: item.management || "",
+      solucion: item.solution || "",
       especies: item.hosts ? item.hosts.map((h) => h.name) : [],
       fuente: "perenual",
       // foto: null,

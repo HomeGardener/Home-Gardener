@@ -102,7 +102,7 @@ export class HuertaSpeciesLoader {
   async run() {
     console.log("🌿 Cargando especies de huerta...");
     const especies = await this.obtenerEspeciesDesdeBD();
-    if(especies){
+    if(!especies){
       for (const nombre of this.especies) {
       const datos = await this.obtenerDatosPlanta(nombre);
       if (datos) await this.insertarEnSupabase(datos);
