@@ -27,7 +27,7 @@ export default function InfoScreen({ navigation }) {
       
       <View style={styles.infoCard}>
         <View style={styles.cardHeader}>
-          <Ionicons name="leaf" size={24} color="#15A266" />
+          <Ionicons name="leaf" size={18} color="#15A266" />
           <Text style={styles.cardTitle}>Fertilizantes Orgánicos</Text>
         </View>
         <Text style={styles.cardDescription}>
@@ -40,7 +40,7 @@ export default function InfoScreen({ navigation }) {
 
       <View style={styles.infoCard}>
         <View style={styles.cardHeader}>
-          <Ionicons name="flask" size={24} color="#FF6B35" />
+          <Ionicons name="flask" size={18} color="#FF6B35" />
           <Text style={styles.cardTitle}>Fertilizantes Químicos</Text>
         </View>
         <Text style={styles.cardDescription}>
@@ -53,7 +53,7 @@ export default function InfoScreen({ navigation }) {
 
       <View style={styles.infoCard}>
         <View style={styles.cardHeader}>
-          <Ionicons name="time" size={24} color="#4A90E2" />
+          <Ionicons name="time" size={18} color="#4A90E2" />
           <Text style={styles.cardTitle}>Frecuencia de Aplicación</Text>
         </View>
         <Text style={styles.cardDescription}>
@@ -72,7 +72,7 @@ export default function InfoScreen({ navigation }) {
       
       <View style={styles.infoCard}>
         <View style={styles.cardHeader}>
-          <Ionicons name="water" size={24} color="#4A90E2" />
+          <Ionicons name="water" size={18} color="#4A90E2" />
           <Text style={styles.cardTitle}>Frecuencia de Riego</Text>
         </View>
         <Text style={styles.cardDescription}>
@@ -85,7 +85,7 @@ export default function InfoScreen({ navigation }) {
 
       <View style={styles.infoCard}>
         <View style={styles.cardHeader}>
-          <Ionicons name="thermometer" size={24} color="#FF6B35" />
+          <Ionicons name="thermometer" size={18} color="#FF6B35" />
           <Text style={styles.cardTitle}>Temperatura del Agua</Text>
         </View>
         <Text style={styles.cardDescription}>
@@ -98,7 +98,7 @@ export default function InfoScreen({ navigation }) {
 
       <View style={styles.infoCard}>
         <View style={styles.cardHeader}>
-          <Ionicons name="warning" size={24} color="#FF6B35" />
+          <Ionicons name="warning" size={18} color="#FF6B35" />
           <Text style={styles.cardTitle}>Señales de Problemas</Text>
         </View>
         <Text style={styles.cardDescription}>
@@ -117,7 +117,7 @@ export default function InfoScreen({ navigation }) {
       
       <View style={styles.infoCard}>
         <View style={styles.cardHeader}>
-          <Ionicons name="sunny" size={24} color="#FFD700" />
+          <Ionicons name="sunny" size={18} color="#FFD700" />
           <Text style={styles.cardTitle}>Luz Directa</Text>
         </View>
         <Text style={styles.cardDescription}>
@@ -130,7 +130,7 @@ export default function InfoScreen({ navigation }) {
 
       <View style={styles.infoCard}>
         <View style={styles.cardHeader}>
-          <Ionicons name="partly-sunny" size={24} color="#FFA500" />
+          <Ionicons name="partly-sunny" size={18} color="#FFA500" />
           <Text style={styles.cardTitle}>Luz Indirecta</Text>
         </View>
         <Text style={styles.cardDescription}>
@@ -143,7 +143,7 @@ export default function InfoScreen({ navigation }) {
 
       <View style={styles.infoCard}>
         <View style={styles.cardHeader}>
-          <Ionicons name="moon" size={24} color="#4A90E2" />
+          <Ionicons name="moon" size={18} color="#4A90E2" />
           <Text style={styles.cardTitle}>Luz Baja</Text>
         </View>
         <Text style={styles.cardDescription}>
@@ -162,7 +162,7 @@ export default function InfoScreen({ navigation }) {
       
       <View style={styles.infoCard}>
         <View style={styles.cardHeader}>
-          <Ionicons name="bug" size={24} color="#8B4513" />
+          <Ionicons name="bug" size={18} color="#8B4513" />
           <Text style={styles.cardTitle}>Plagas Comunes</Text>
         </View>
         <Text style={styles.cardDescription}>
@@ -175,7 +175,7 @@ export default function InfoScreen({ navigation }) {
 
       <View style={styles.infoCard}>
         <View style={styles.cardHeader}>
-          <Ionicons name="shield-checkmark" size={24} color="#15A266" />
+          <Ionicons name="shield-checkmark" size={18} color="#15A266" />
           <Text style={styles.cardTitle}>Tratamientos Naturales</Text>
         </View>
         <Text style={styles.cardDescription}>
@@ -188,7 +188,7 @@ export default function InfoScreen({ navigation }) {
 
       <View style={styles.infoCard}>
         <View style={styles.cardHeader}>
-          <Ionicons name="eye" size={24} color="#4A90E2" />
+          <Ionicons name="eye" size={18} color="#4A90E2" />
           <Text style={styles.cardTitle}>Prevención</Text>
         </View>
         <Text style={styles.cardDescription}>
@@ -207,7 +207,7 @@ export default function InfoScreen({ navigation }) {
       
       <View style={styles.infoCard}>
         <View style={styles.cardHeader}>
-          <Ionicons name="cut" size={24} color="#8B4513" />
+          <Ionicons name="cut" size={18} color="#8B4513" />
           <Text style={styles.cardTitle}>Cuándo Podar</Text>
         </View>
         <Text style={styles.cardDescription}>
@@ -220,7 +220,7 @@ export default function InfoScreen({ navigation }) {
 
       <View style={styles.infoCard}>
         <View style={styles.cardHeader}>
-          <Ionicons name="construct" size={24} color="#FF6B35" />
+          <Ionicons name="construct" size={18} color="#FF6B35" />
           <Text style={styles.cardTitle}>Herramientas Necesarias</Text>
         </View>
         <Text style={styles.cardDescription}>
@@ -233,7 +233,7 @@ export default function InfoScreen({ navigation }) {
 
       <View style={styles.infoCard}>
         <View style={styles.cardHeader}>
-          <Ionicons name="checkmark-circle" size={24} color="#15A266" />
+          <Ionicons name="checkmark-circle" size={18} color="#15A266" />
           <Text style={styles.cardTitle}>Técnicas Básicas</Text>
         </View>
         <Text style={styles.cardDescription}>
@@ -287,21 +287,15 @@ export default function InfoScreen({ navigation }) {
         {tabs.map((tab) => (
           <TouchableOpacity
             key={tab.id}
-            style={[
-              styles.tab,
-              activeTab === tab.id && styles.activeTab
-            ]}
+            style={[styles.tab, activeTab === tab.id && styles.activeTab]}
             onPress={() => setActiveTab(tab.id)}
           >
             <Ionicons 
               name={tab.icon} 
-              size={18}                                   // ← antes 20
+              size={18}                                      // Íconos más pequeños
               color={activeTab === tab.id ? '#fff' : '#15A266'} 
             />
-            <Text style={[
-              styles.tabText,
-              activeTab === tab.id && styles.activeTabText
-            ]}>
+            <Text style={[styles.tabText, activeTab === tab.id && styles.activeTabText]}>
               {tab.title}
             </Text>
           </TouchableOpacity>
@@ -350,30 +344,29 @@ const styles = StyleSheet.create({
     borderBottomColor: '#E0E0E0',
   },
   tabsContent: {
-    paddingHorizontal: 12,    // ← antes 16
-    paddingVertical: 6,       // ← antes 10/12
+    paddingHorizontal: 6,  // Reducido el padding horizontal
+    paddingVertical: 4,    // Reducido el padding vertical
   },
   tab: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: 12,    // ← antes 16
-    paddingVertical: 6,       // ← antes 8
-    marginRight: 8,           // ← antes 10/12
-    borderRadius: 16,         // ← antes 25
+    paddingHorizontal: 6,  // Menor padding horizontal
+    paddingVertical: 4,    // Menor padding vertical
+    marginRight: 8,        // Ajustado el margen entre las tabs
+    borderRadius: 10,      // Se mantiene el borde redondeado pero más pequeño
     backgroundColor: '#F3F4F6',
-    gap: 6,                   // ← antes 8
-    elevation: 0,             // sin sombra para que se vea más fino
+    gap: 4,                // Reducido el gap entre el icono y el texto
+    elevation: 0,          // Sin sombra para que se vea más fino
   },
   activeTab: {
-    backgroundColor: '#15A266',
+    backgroundColor: '#15A266',  // Fondo verde para la tab activa
   },
   tabText: {
-    fontSize: 14,             // ← antes 15
+    fontSize: 10,          // Fuente más pequeña y compacta
     fontWeight: '600',
     color: '#15A266',
   },
   activeTabText: { color: '#fff' },
-  
 
   /* SCROLL PRINCIPAL */
   scrollView: { flex: 1 },
