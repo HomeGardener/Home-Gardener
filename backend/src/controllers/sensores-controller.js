@@ -3,12 +3,22 @@ import { Router } from 'express';
 import { StatusCodes } from 'http-status-codes';
 import authenticateToken from '../middlewares/auth.js';
 import SensoresService from '../services/sensores-service.js';
+import rateLimit from 'express-rate-limit';
+
+// Rate limiter: max 100 requests per 15 minutes per IP
+const sensoresLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 100, // limit each IP to 100 requests per windowMs
+  standardHeaders: true, 
+  legacyHeaders: false,
+  message: { message: "Too many requests, please try again later." },
+});
 
 const router = Router();
 const sensoresService = new SensoresService();
 
 // Obtener datos de sensores
-router.get('/datosSensores', authenticateToken, async (req, res) => {
+router.get('/datosSensores', authenticateToken, sensoresLimiter, async (req, res) => {
   try {
     const idPlanta = Number(req.query.idPlanta);
     const idUsuario = req.user.ID;
@@ -21,7 +31,7 @@ router.get('/datosSensores', authenticateToken, async (req, res) => {
 });
 
 // Obtener último riego
-router.get('/ultRiego', authenticateToken, async (req, res) => {
+router.get('/ultRiego', authenticateToken, sensoresLimiter, async (req, res) => {
   try {
     const idPlanta = Number(req.query.idPlanta);
     const idUsuario = req.user.ID;
@@ -34,7 +44,7 @@ router.get('/ultRiego', authenticateToken, async (req, res) => {
 });
 
 // Conectar módulo
-router.put('/conectarModulo', authenticateToken, async (req, res) => {
+router.put('/conectarModulo', authenticateToken, sensoresLimiter, async (req, res) => {
   try {
     const { idPlanta, idModulo } = req.body;
     const result = await sensoresService.conectarModulo(Number(idPlanta), Number(idModulo));
@@ -46,7 +56,7 @@ router.put('/conectarModulo', authenticateToken, async (req, res) => {
 });
 
 // Desconectar módulo
-router.delete('/desconectarModulo', authenticateToken, async (req, res) => {
+router.delete('/desconectarModulo', authenticateToken, sensoresLimiter, async (req, res) => {
   try {
     const { idPlanta } = req.body;
     const idUsuario = req.user.ID;
