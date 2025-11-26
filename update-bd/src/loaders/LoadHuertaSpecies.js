@@ -31,15 +31,17 @@ export class HuertaSpeciesLoader {
     try {
         //Para obtener datos de foliage, fuit_or_seed, flower y growth hay que tener el id de la planta
         const infoPlantaGral = await fetch(`https://trefle.io/api/v1/plants/search?token=${process.env.TREFLE_TOKEN}&q=${nombre}`);
-        const planta = infoPlantaGral.data.data[0];
+
+        const planta = infoPlantaGral.body.data;
 
         const infoPlantaDetallada = await fetch(`https://trefle.io/api/v1/species/${planta.id}?token=${process.env.TREFLE_TOKEN}`);
         const json = await infoPlantaDetallada.json();
-        console.log(json);
+        console.log(JSON.stringify(json, null, 2));
         return json;
 
     } catch (err) {
       console.error(`❌ Error con ${nombre}:`, err.message);
+
       return null;
     }
   }
@@ -95,17 +97,19 @@ export class HuertaSpeciesLoader {
   }
 
   async run() {
-    console.log("🌿 Cargando especies de huerta...");
+   console.log("🌿 Cargando especies de huerta...");
     const especies = await this.obtenerEspeciesDesdeBD();
     if(!especies){
       for (const nombre of this.especies) {
-      const datosCompletosPlanta = await this.obtenerDatosPlanta(nombre);
-      const datosSeleccionadosPlanta = await this.seleccionarDatosYArmar(datosCompletosPlanta);
-      if (datosSeleccionadosPlanta) await this.insertarEnSupabase(datosSeleccionadosPlanta, nombre);
-    }
+        console.log("Especie ahora: "+nombre);  
+    
+        const datosCompletosPlanta = await this.obtenerDatosPlanta(nombre);
+        const datosSeleccionadosPlanta = await this.seleccionarDatosYArmar(datosCompletosPlanta);
+        if (datosSeleccionadosPlanta) await this.insertarEnSupabase(datosSeleccionadosPlanta, nombre);
+      }
     console.log("✅ Carga completa.");
+    }
   }
-}
 }
 
 

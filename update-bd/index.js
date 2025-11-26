@@ -19,7 +19,7 @@ async function main() {
     case "especies":
       console.log("🌱 Ejecutando carga de especies...");
       const speciesLoader = new HuertaSpeciesLoader();
-      await speciesLoader.ObtenerDatosDeLaAPI();
+      await speciesLoader.run();
       break;
 
     case "enfermedades":
