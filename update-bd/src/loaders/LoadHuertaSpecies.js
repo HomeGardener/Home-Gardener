@@ -1,8 +1,10 @@
-/*
-import axios from "axios";
+
 import { createClient } from "@supabase/supabase-js";
 import https from "https";
 import { uploadImageToSupabase } from "../utils/uploadImageToSupabase.js";
+import fetch from "node-fetch";
+
+
 
 export class HuertaSpeciesLoader {
   constructor() {
@@ -26,54 +28,63 @@ export class HuertaSpeciesLoader {
   }
 
   async obtenerDatosPlanta(nombre) {
+    
     try {
-      const searchUrl = `https://trefle.io/api/v1/plants/search?token=${process.env.TOKEN_TREFLE}&q=${encodeURIComponent(nombre)}`;
-      const res = await axios.get(searchUrl, { httpsAgent: this.agent });
-      const planta = res.data.data[0];
+        //Para obtener datos de foliage, fuit_or_seed, flower y growth hay que tener el id de la planta
+        const infoPlantaGral = await fetch(`https://trefle.io/api/v1/plants/search?token=${YOUR_TREFLE_TOKEN}&q=${nombre}`);
+        const planta = infoPlantaGral.data.data[0];
 
-      if (!planta) {
-        console.warn(`⚠️ No se encontró información para: ${nombre}`);
-        return null;
-      }
+        const infoPlantaDetallada = await fetch(`https://trefle.io/api/v1/species/${planta.id}?token=${YOUR_TREFLE_TOKEN}`);
+        const json = await infoPlantaDetallada.json();
+        console.log(json);
+        return json;
 
-      const detailUrl = `https://trefle.io/api/v1/plants/${planta.slug}?token=${process.env.TOKEN_TREFLE}`;
-      const detalle = await axios.get(detailUrl, { httpsAgent: this.agent });
-      const d = detalle.data.data;
-      const g = d.main_species?.growth || {};
-
-      const fotoUrl = planta.image_url ? await uploadImageToSupabase(planta.image_url, "tipoEspecifico") : null;
-
-      const contenidoGuia = `
-        Luz: ${g.light ?? "?"}/10
-        Humedad: ${g.atmospheric_humidity ?? "?"}/10
-        Crecimiento: ${g.growth_rate ?? "?"}
-        Días hasta cosecha: ${g.days_to_harvest ?? "?"}
-      `.trim();
-
-
-      return {
-        nombre: planta.common_name || planta.scientific_name || nombre,
-        info: `Luz: ${g.light ?? "?"}/10 | Crecimiento: ${g.growth_rate ?? "?"}`,
-        foto: fotoUrl,
-        tempMin: g.minimum_temperature?.deg_c ?? null,
-        tempMax: g.maximum_temperature?.deg_c ?? null,
-        contenidoGuia
-      };
     } catch (err) {
       console.error(`❌ Error con ${nombre}:`, err.message);
       return null;
     }
   }
 
-  async insertarEnSupabase(datos) {
+  async seleccionarDatosYArmar(infoPlantaDetallada){
+      //Growth: Humedad atmosférica (atmospheric_humidity) y del suelo (soil_humidity) aparte, temp min (minimum_temperature) y max (maximum_temperature) tmb
+      //gral: Nombre cientifico tmb (scientific_name)
+      const contenidoGuia = `
+        Luz: ${infoPlantaDetallada.g.light ?? "?"}/10
+        Meses de crecimiento: ${infoPlantaDetallada.g.growth_months ?? "?"}
+        Meses en los que salen los frutos: ${infoPlantaDetallada.g.fruit_months ?? "?"}
+        Cuánto espacio necesita para desarrollarse: ${infoPlantaDetallada.g.spread ?? "?"}
+        Espacio mínimo para las raíces: ${infoPlantaDetallada.g.minimum_root_depth ?? "?"}
+        Días hasta cosecha: ${infoPlantaDetallada.g.days_to_harvest ?? "?"}
+        Descripción del crecimiento: ${infoPlantaDetallada.g.description ?? "?"}
+        PH máximo aceptable: ${infoPlantaDetallada.g.ph_maximum ?? "?"}
+        PH mínimo aceptable: ${infoPlantaDetallada.g.ph_minimum ?? "?"}
+        Precipitación mínima: ${infoPlantaDetallada.g.minimum_precipitation ?? "?"}
+        Precipitación máxima: ${infoPlantaDetallada.g.maximum_precipitation ?? "?"}
+      `.trim();
+
+      const nombreTraducido = traducirNombre(infoPlantaDetallada.common_name);
+      return {
+        nombre: nombreTraducido,
+        nombreCientifico: infoPlantaDetallada.scientific_name, 
+        tempMin: infoPlantaDetallada.growth.minimum_temperature?.deg_c ?? null,
+        tempMax: infoPlantaDetallada.growth.maximum_temperature?.deg_c ?? null,
+        humedadAtmos: infoPlantaDetallada.growth.atmospheric_humidity?.deg_c ?? null,
+        humedadSuelo: infoPlantaDetallada.growth.soil_humidity?.deg_c ?? null, 
+        contenidoGuia
+      };
+  }
+
+  async insertarEnSupabase(datos, nombreBD) {
     const { data, error } = await this.supabase
       .from("TipoEspecifico")
       .insert({
-        Nombre: datos.nombre,
-        Info: datos.info,
-        Foto: datos.foto,
+        Nombre: nombreBD || datos.nombre,
+        Info: datos.contenidoGuia,
         TempMinIdeal: datos.tempMin,
-        TempMaxIdeal: datos.tempMax
+        TempMaxIdeal: datos.tempMax, 
+        HumedadAtmosferica: humedadAtmos, 
+        HumedadDelSuelo: humedadSuelo, 
+        NombreCientifico: nombreCientifico,
       })
       .select("ID")
       .single();
@@ -82,22 +93,6 @@ export class HuertaSpeciesLoader {
       console.error("❌ Error al insertar TipoEspecifico:", error.message);
       return;
     }
-
-          
-    const { error: guiaError } = await this.supabase
-    .from("Guía")
-    .insert({
-      Título: `Guía de cultivo de ${datos.nombre}`,
-      Contenido: datos.contenidoGuia,
-      Multimedia: datos.foto,
-      IdPlanta: idPlanta
-    });
-
-  if (guiaError) console.error("⚠️ Error al insertar Guía:", guiaError.message);
-  else console.log(`✅ Insertado ${datos.nombre} con guía`);
-
-
-    const idPlanta = data.ID;
   }
 
   async run() {
@@ -105,25 +100,17 @@ export class HuertaSpeciesLoader {
     const especies = await this.obtenerEspeciesDesdeBD();
     if(!especies){
       for (const nombre of this.especies) {
-      const datos = await this.obtenerDatosPlanta(nombre);
-      if (datos) await this.insertarEnSupabase(datos);
+      const datosCompletosPlanta = await this.obtenerDatosPlanta(nombre);
+      const datosSeleccionadosPlanta = await this.seleccionarDatosYArmar(datosCompletosPlanta);
+      if (datosSeleccionadosPlanta) await this.insertarEnSupabase(datosSeleccionadosPlanta, nombre);
     }
     console.log("✅ Carga completa.");
   }
 }
 }
 
-*/
-import fetch from "node-fetch";
-
-const YOUR_TREFLE_TOKEN = "usr-S19mKaCg5AfRHjyg_bx6_CIO6x2M8B7ZsxKJyIyHLgM"
-
-export class HuertaSpeciesLoader {
 
 
-async ObtenerDatosDeLaAPI () {
-  const response = await fetch(`https://trefle.io/api/v1/plants/search?token=${YOUR_TREFLE_TOKEN}`);
-  const json = await response.json();
-  console.log(json);
-}
-}
+
+
+
