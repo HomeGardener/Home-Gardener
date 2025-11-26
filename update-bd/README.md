@@ -1,3 +1,8 @@
+cosas a mejorar con búsqueda de Especies: 
+- Cargar imagenes de la sección images y la de species (campo image_url) a la bd (con buckets). 
+- Completar la info subiendo data contenida en flower, foliage y fruit_or_seed
+- Función traducirNombre (en espcies) --> generalizar la de enfermedades
+
 # React + Vite
 
 This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
