@@ -4,13 +4,12 @@ import https from "https";
 import { uploadImageToSupabase } from "../utils/uploadImageToSupabase.js";
 import fetch from "node-fetch";
 
-
-
 export class HuertaSpeciesLoader {
-  constructor() {
+  constructor() { 
     this.supabase = createClient( process.env.SUPABASE_URL, process.env.SUPABASE_KEY);
     this.agent = new https.Agent({ rejectUnauthorized: false });    
   }
+
   async obtenerEspeciesDesdeBD() {
     console.log("Obteniendo especies desde la base de datos");
     const { data, error } = await this.supabase
@@ -31,10 +30,10 @@ export class HuertaSpeciesLoader {
     
     try {
         //Para obtener datos de foliage, fuit_or_seed, flower y growth hay que tener el id de la planta
-        const infoPlantaGral = await fetch(`https://trefle.io/api/v1/plants/search?token=${YOUR_TREFLE_TOKEN}&q=${nombre}`);
+        const infoPlantaGral = await fetch(`https://trefle.io/api/v1/plants/search?token=${process.env.TREFLE_TOKEN}&q=${nombre}`);
         const planta = infoPlantaGral.data.data[0];
 
-        const infoPlantaDetallada = await fetch(`https://trefle.io/api/v1/species/${planta.id}?token=${YOUR_TREFLE_TOKEN}`);
+        const infoPlantaDetallada = await fetch(`https://trefle.io/api/v1/species/${planta.id}?token=${process.env.TREFLE_TOKEN}`);
         const json = await infoPlantaDetallada.json();
         console.log(json);
         return json;
