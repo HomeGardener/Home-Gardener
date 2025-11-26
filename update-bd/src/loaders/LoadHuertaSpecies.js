@@ -1,8 +1,21 @@
 
 import { createClient } from "@supabase/supabase-js";
 import https from "https";
+import { Ollama } from "@llamaindex/ollama";
+import dotenv from "dotenv";
 import { uploadImageToSupabase } from "../utils/uploadImageToSupabase.js";
 import fetch from "node-fetch";
+
+
+  const ollamaLLM = new Ollama({
+  model: process.env.OLLAMA_MODEL || "mistral:7b",
+  temperature: 0.25, // determinista para diagnóstico
+  timeout: 60000,
+});
+
+dotenv.config();
+
+
 
 export class HuertaSpeciesLoader {
   constructor() { 
@@ -27,12 +40,16 @@ export class HuertaSpeciesLoader {
   }
 
   async obtenerDatosPlanta(nombre) {
-    
+    console.log(`Obteniendo datos para la planta: ${nombre}`);
     try {
-        //Para obtener datos de foliage, fuit_or_seed, flower y growth hay que tener el id de la planta
-        const infoPlantaGral = await fetch(`https://trefle.io/api/v1/plants/search?token=${process.env.TREFLE_TOKEN}&q=${nombre}`);
-
+      const nombreTraducido = await this.traducirNombre(nombre, "inglés");
+      console.log("nombreTraducido: "+nombreTraducido);
+        //Para obtener datos de foliage, fuit_or_seed, flower y growth hay que tener el id de la planta --> primero obtener id y luego buscar por especie
+        const infoPlantaGral = await fetch(`https://trefle.io/api/v1/plants/search?token=${process.env.TREFLE_TOKEN}&q=${nombreTraducido}`);
+        console.log("infoPlantaGral"+JSON.stringify(infoPlantaGral, null, 2));
+        
         const planta = infoPlantaGral.body.data;
+        console.log("planta"+JSON.stringify(planta, null, 2));
 
         const infoPlantaDetallada = await fetch(`https://trefle.io/api/v1/species/${planta.id}?token=${process.env.TREFLE_TOKEN}`);
         const json = await infoPlantaDetallada.json();
@@ -46,24 +63,42 @@ export class HuertaSpeciesLoader {
     }
   }
 
+async traducirNombre(speciesText, lenguajeDestino = "es") {
+  //Agregar traduc en abse a lista palabras registradas
+  
+  // pedir traducción por LLM
+  try {
+    const prompt = `Traduce a ${lenguajeDestino} el nombre común de esta planta, devolviendo solo la traducción corta (ej: 'kiwi'):\n\n"${speciesText}"`;
+    const out = await ollamaLLM.complete({ prompt, temperature: 0.0 });
+    const text = (out?.text || "").trim();
+    // limpiar
+    return text.split("\n")[0].replace(/["']/g, "").trim();
+  } catch (err) {
+    console.error("[traducirNombre] ", err.message);
+    return speciesText;
+  }
+}
+
   async seleccionarDatosYArmar(infoPlantaDetallada){
       //Growth: Humedad atmosférica (atmospheric_humidity) y del suelo (soil_humidity) aparte, temp min (minimum_temperature) y max (maximum_temperature) tmb
       //gral: Nombre cientifico tmb (scientific_name)
       const contenidoGuia = `
-        Luz: ${infoPlantaDetallada.g.light ?? "?"}/10
-        Meses de crecimiento: ${infoPlantaDetallada.g.growth_months ?? "?"}
-        Meses en los que salen los frutos: ${infoPlantaDetallada.g.fruit_months ?? "?"}
-        Cuánto espacio necesita para desarrollarse: ${infoPlantaDetallada.g.spread ?? "?"}
-        Espacio mínimo para las raíces: ${infoPlantaDetallada.g.minimum_root_depth ?? "?"}
-        Días hasta cosecha: ${infoPlantaDetallada.g.days_to_harvest ?? "?"}
-        Descripción del crecimiento: ${infoPlantaDetallada.g.description ?? "?"}
-        PH máximo aceptable: ${infoPlantaDetallada.g.ph_maximum ?? "?"}
-        PH mínimo aceptable: ${infoPlantaDetallada.g.ph_minimum ?? "?"}
-        Precipitación mínima: ${infoPlantaDetallada.g.minimum_precipitation ?? "?"}
-        Precipitación máxima: ${infoPlantaDetallada.g.maximum_precipitation ?? "?"}
+        Luz: ${infoPlantaDetallada.growth.light ?? "?"}/10
+        Meses de crecimiento: ${infoPlantaDetallada.growth.growth_months ?? "?"}
+        Meses en los que salen los frutos: ${infoPlantaDetallada.growth.fruit_months ?? "?"}
+        Cuánto espacio necesita para desarrollarse: ${infoPlantaDetallada.growth.spread ?? "?"}
+        Espacio mínimo para las raíces: ${infoPlantaDetallada.growth.minimum_root_depth ?? "?"}
+        Días hasta cosecha: ${infoPlantaDetallada.growth.days_to_harvest ?? "?"}
+        Descripción del crecimiento: ${infoPlantaDetallada.growth.description ?? "?"}
+        PH máximo aceptable: ${infoPlantaDetallada.growth.ph_maximum ?? "?"}
+        PH mínimo aceptable: ${infoPlantaDetallada.growth.ph_minimum ?? "?"}
+        Precipitación mínima: ${infoPlantaDetallada.growth.minimum_precipitation ?? "?"}
+        Precipitación máxima: ${infoPlantaDetallada.growth.maximum_precipitation ?? "?"}
       `.trim();
+      console.log("contenidoGuia: "+contenidoGuia);
+      const nombreTraducido = await this.traducirNombre(infoPlantaDetallada.common_name);
+      console.log("nombreTraducido: "+nombreTraducido);
 
-      const nombreTraducido = traducirNombre(infoPlantaDetallada.common_name);
       return {
         nombre: nombreTraducido,
         nombreCientifico: infoPlantaDetallada.scientific_name, 
@@ -73,6 +108,7 @@ export class HuertaSpeciesLoader {
         humedadSuelo: infoPlantaDetallada.growth.soil_humidity?.deg_c ?? null, 
         contenidoGuia
       };
+
   }
 
   async insertarEnSupabase(datos, nombreBD) {
@@ -89,7 +125,7 @@ export class HuertaSpeciesLoader {
       })
       .select("ID")
       .single();
-
+      console.log("Datos insertados en Supabase para "+nombreBD);
     if (error) {
       console.error("❌ Error al insertar TipoEspecifico:", error.message);
       return;
@@ -98,17 +134,22 @@ export class HuertaSpeciesLoader {
 
   async run() {
    console.log("🌿 Cargando especies de huerta...");
-    const especies = await this.obtenerEspeciesDesdeBD();
-    if(!especies){
-      for (const nombre of this.especies) {
+   /* const especies = await this.obtenerEspeciesDesdeBD();
+    if(especies){
+      console.log("Entra al if");
+      especies.forEach(async (nombre) => {
         console.log("Especie ahora: "+nombre);  
     
         const datosCompletosPlanta = await this.obtenerDatosPlanta(nombre);
         const datosSeleccionadosPlanta = await this.seleccionarDatosYArmar(datosCompletosPlanta);
-        if (datosSeleccionadosPlanta) await this.insertarEnSupabase(datosSeleccionadosPlanta, nombre);
-      }
-    console.log("✅ Carga completa.");
+        if (datosSeleccionadosPlanta) await this.insertarEnSupabase(dateosSeleccionadosPlanta, nombre);
+      });
     }
+
+  */
+         const datosCompletosPlanta = await this.obtenerDatosPlanta("tomate");
+
+    console.log("✅ Carga completa.");
   }
 }
 
