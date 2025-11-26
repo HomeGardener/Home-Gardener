@@ -72,7 +72,9 @@ export class HuertaSpeciesLoader {
         Info: datos.info,
         Foto: datos.foto,
         TempMinIdeal: datos.tempMin,
-        TempMaxIdeal: datos.tempMax
+        TempMaxIdeal: datos.tempMax, 
+        //HumedadMinIdeal: datos.humedadMin, 
+        //HumedadMaxIdeal: datos.humedadMax, 
       })
       .select("ID")
       .single();
