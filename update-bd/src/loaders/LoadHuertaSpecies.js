@@ -1,3 +1,4 @@
+/*
 import axios from "axios";
 import { createClient } from "@supabase/supabase-js";
 import https from "https";
@@ -109,5 +110,20 @@ export class HuertaSpeciesLoader {
     }
     console.log("✅ Carga completa.");
   }
+}
+}
+
+*/
+import fetch from "node-fetch";
+
+const YOUR_TREFLE_TOKEN = "usr-S19mKaCg5AfRHjyg_bx6_CIO6x2M8B7ZsxKJyIyHLgM"
+
+export class HuertaSpeciesLoader {
+
+
+async ObtenerDatosDeLaAPI () {
+  const response = await fetch(`https://trefle.io/api/v1/plants/search?token=${YOUR_TREFLE_TOKEN}`);
+  const json = await response.json();
+  console.log(json);
 }
 }
