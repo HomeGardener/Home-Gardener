@@ -42,22 +42,40 @@ export class HuertaSpeciesLoader {
   async obtenerDatosPlanta(nombre) {
     console.log(`Obteniendo datos para la planta: ${nombre}`);
     try {
-      const nombreTraducido = await this.traducirNombre(nombre, "inglés");
-      console.log("nombreTraducido: "+nombreTraducido);
-        //Para obtener datos de foliage, fuit_or_seed, flower y growth hay que tener el id de la planta --> primero obtener id y luego buscar por especie
-        const infoPlantaGral = await fetch(`https://trefle.io/api/v1/plants/search?token=${process.env.TREFLE_TOKEN}&q=${nombreTraducido}`);
-        console.log("infoPlantaGral"+JSON.stringify(infoPlantaGral, null, 2));
-        
-        const planta = infoPlantaGral.body.data;
-        console.log("planta"+JSON.stringify(planta, null, 2));
+      //const nombreTraducido = await this.traducirNombre(nombre, "inglés");
+      //console.log("nombreTraducido: "+nombreTraducido);
+           //Para obtener datos de foliage, fuit_or_seed, flower y growth hay que tener el id de la planta --> primero obtener id y luego buscar por especie
+       // const infoPlantaGral = await fetch(`https://trefle.io/api/v1/plants/search?token=${process.env.TREFLE_TOKEN}&q=${nombreTraducido}`);
+           // 1. Buscar la planta
+    //const resBusqueda = await fetch(`https://trefle.io/api/v1/plants/search?token=${process.env.TREFLE_TOKEN}&q=${nombre}`);
+    const resBusqueda = await fetch(`https://trefle.io/api/v1/plants/search?token=${process.env.TREFLE_TOKEN}&q=tomato`);
+    const jsonBusqueda = await resBusqueda.json();
 
-        const infoPlantaDetallada = await fetch(`https://trefle.io/api/v1/species/${planta.id}?token=${process.env.TREFLE_TOKEN}`);
-        const json = await infoPlantaDetallada.json();
-        console.log(JSON.stringify(json, null, 2));
-        return json;
+    //console.log("Resultado de búsqueda:", JSON.stringify(jsonBusqueda, null, 2));
+
+    // 2. Validar si encontró algo
+    if (!jsonBusqueda.data || jsonBusqueda.data.length === 0) {
+      //throw new Error(`No se encontró la planta "${nombre}" en Trefle`);
+      throw new Error(`No se encontró la planta tomato en Trefle`);
+    }
+
+    const plantaEncontrada = jsonBusqueda.data[0]; // tomo la primera coincidencia
+    //console.log("Planta encontrada:", plantaEncontrada);
+
+    // 3. Consultar especie por id
+    //const resDetalle = await fetch(`https://trefle.io/api/v1/species/${plantaEncontrada.id}?token=${process.env.TREFLE_TOKEN}` );
+    const resDetalle = await fetch(`https://trefle.io/api/v1/species/${plantaEncontrada.id}?token=${process.env.TREFLE_TOKEN}` );
+
+    const jsonDetalle = await resDetalle.json();
+
+    //console.log("Detalle:", JSON.stringify(jsonDetalle, null, 2));
+
+    return jsonDetalle;
+
 
     } catch (err) {
-      console.error(`❌ Error con ${nombre}:`, err.message);
+      //console.error(`❌ Error con ${nombre}:`, err.message);
+      console.error(`❌ Error con tomato:`, err.message);
 
       return null;
     }
@@ -134,7 +152,7 @@ async traducirNombre(speciesText, lenguajeDestino = "es") {
 
   async run() {
    console.log("🌿 Cargando especies de huerta...");
-   /* const especies = await this.obtenerEspeciesDesdeBD();
+    const especies = await this.obtenerEspeciesDesdeBD();
     if(especies){
       console.log("Entra al if");
       especies.forEach(async (nombre) => {
@@ -146,9 +164,7 @@ async traducirNombre(speciesText, lenguajeDestino = "es") {
       });
     }
 
-  */
-         const datosCompletosPlanta = await this.obtenerDatosPlanta("tomate");
-
+  
     console.log("✅ Carga completa.");
   }
 }
