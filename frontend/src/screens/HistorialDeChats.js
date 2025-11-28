@@ -1,37 +1,47 @@
-import React, { useState, useEffect } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, FlatList, Alert } from 'react-native';
+import React, { useState } from 'react';
+import { View, Text, TouchableOpacity, StyleSheet, FlatList } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import Ionicons from 'react-native-vector-icons/Ionicons';
+import Ionicons from '@expo/vector-icons/Ionicons';
+import { useFocusEffect } from '@react-navigation/native';
+import { useCallback } from 'react';
 
 const STORAGE_KEY = 'chat_history';
 
 export default function HistorialDeChats({ navigation }) {
   const [chats, setChats] = useState([]);
 
-  useEffect(() => {
-    // Cargar los chats guardados desde AsyncStorage
-    (async () => {
-      try {
-        const raw = await AsyncStorage.getItem(STORAGE_KEY);
-        if (raw) {
-          const parsedChats = JSON.parse(raw);
-          setChats(parsedChats);
+  // Cargar los chats cada vez que la pantalla gana foco
+  useFocusEffect(
+    useCallback(() => {
+      const loadChats = async () => {
+        try {
+          const raw = await AsyncStorage.getItem(STORAGE_KEY);
+          if (!raw) {
+            setChats([]);
+            return;
+          }
+          const parsed = JSON.parse(raw);
+          // Nos aseguramos de que sea un array
+          setChats(Array.isArray(parsed) ? parsed : []);
+        } catch (e) {
+          console.error('Error al cargar los chats', e);
+          setChats([]);
         }
-      } catch (e) {
-        console.error('Error al cargar los chats', e);
-      }
-    })();
-  }, []);
+      };
 
-  const viewChat = (chatId) => {
-    const chat = chats.find((c) => c.id === chatId);
-    if (chat) {
-      navigation.navigate('Chatbot', { chatMessages: chat.messages });
-    }
+      loadChats();
+    }, [])
+  );
+
+  const viewChat = (chat) => {
+    navigation.navigate('Chatbot', {
+      chatId: chat.id,
+      chatMessages: chat.messages,
+    });
   };
 
   const renderChatItem = ({ item }) => (
-    <TouchableOpacity style={styles.chatItem} onPress={() => viewChat(item.id)}>
+    <TouchableOpacity style={styles.chatItem} onPress={() => viewChat(item)}>
       <View style={styles.chatItemLeft}>
         <Ionicons name="chatbox-ellipses" size={24} color="#15A266" />
         <Text style={styles.chatItemText}>

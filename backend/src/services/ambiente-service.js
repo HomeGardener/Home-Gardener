@@ -9,7 +9,6 @@ export default class AmbienteService {
   async agregar({ nombre, idUsuario }) {
     if (!(await validator.isValidString(nombre)) || !idUsuario)
       throw new AppError('Valores de campos inválidos', StatusCodes.BAD_REQUEST);
-
     const ambiente = await repo.buscarAmbiente(nombre, idUsuario);
     if(!ambiente){
       const result = await repo.create(nombre.trim(), idUsuario);

@@ -1,3 +1,4 @@
+// src/components/ProtectedRoute.js
 import React from 'react';
 import { View, Text, ActivityIndicator, StyleSheet } from 'react-native';
 import { useAuth } from '../contexts/AuthContext';
@@ -17,7 +18,9 @@ export default function ProtectedRoute({ children, fallback = null }) {
   if (!isAuthenticated) {
     return fallback || (
       <View style={styles.errorContainer}>
-        <Text style={styles.errorText}>Debes iniciar sesión para acceder a esta página</Text>
+        <Text style={styles.errorText}>
+          Debes iniciar sesión para acceder a esta página
+        </Text>
       </View>
     );
   }

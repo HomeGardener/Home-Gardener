@@ -3,8 +3,11 @@ import { View, StyleSheet, TouchableOpacity } from 'react-native';
 import Footer from './Footer';
 import Navbar from './Navbar';
 import Notifications from './Notifications';
-import Ionicons from 'react-native-vector-icons/Ionicons';
+import Ionicons from '@expo/vector-icons/Ionicons';
 
+console.log('Navbar =>', Navbar);
+console.log('Notifications =>', Notifications);
+console.log('Footer =>', Footer);
 export default function Layout({ children, navigation, showBackButton = true }) {
     return (
         <View style={styles.container}>
