@@ -1,45 +1,17 @@
-import React, { useState, useEffect, useRef } from 'react';
-import {
-  View,
-  Text,
-  StyleSheet,
-  TextInput,
-  TouchableOpacity,
-  ScrollView,
-  KeyboardAvoidingView,
-  Platform,
-  Image
-} from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
-import Ionicons from 'react-native-vector-icons/Ionicons';
-import AsyncStorage from '@react-native-async-storage/async-storage';
-
-const STORAGE_KEY = 'chat_messages_v1';
-
-// Mensaje inicial del bot
-const initialBotMsg = {
-  id: 1,
-  text: '¡Buen día! ¿En qué te puedo ayudar?',
-  sender: 'bot',
-  timestamp: new Date(),
-};
+import React, { useState } from 'react';
+import { sendMessage } from './api';
 
 export default function ChatbotScreen({ navigation }) {
-  const [messages, setMessages] = useState([initialBotMsg]);
+    /*const [messages, setMessages] = useState([initialBotMsg]);
   const [inputText, setInputText] = useState('');
   const [restoring, setRestoring] = useState(true);
   const scrollViewRef = useRef();
+*/
+    const [messages, setMessages] = useState([]);
+    const [loading, setLoading] = useState(false);
 
-  const botResponses = [
-    'Para cuidar tus plantas, asegúrate de regarlas regularmente pero sin exceso.',
-    'La mayoría de las plantas necesitan luz solar indirecta durante 6-8 horas al día.',
-    'Recomiendo fertilizar tus plantas cada 2-3 semanas durante la temporada de crecimiento.',
-    'Si notas hojas amarillas, puede ser exceso de agua o falta de nutrientes.',
-    'Para plantas de interior, mantén la temperatura entre 18-24°C.',
-    '¿Podrías contarme más sobre el problema específico de tu planta?'
-  ];
 
-  // --- Cargar historial de mensajes
+      // --- Cargar historial de mensajes
   useEffect(() => {
     (async () => {
       try {
@@ -57,12 +29,7 @@ export default function ChatbotScreen({ navigation }) {
     })();
   }, []);
 
-  // --- Guardar historial de mensajes cada vez que cambian
-  useEffect(() => {
-    if (restoring) return; // No sobreescribir mientras estamos restaurando
-    AsyncStorage.setItem(STORAGE_KEY, JSON.stringify([{ id: Date.now(), messages }])).catch(() => {});
-  }, [messages, restoring]);
-
+  
   // --- Scroll hacia abajo cada vez que se agregan mensajes
   useEffect(() => {
     if (scrollViewRef.current) {
@@ -70,39 +37,54 @@ export default function ChatbotScreen({ navigation }) {
     }
   }, [messages]);
 
-  // --- Manejar el envío de mensajes
-  const handleSendMessage = () => {
-    if (inputText.trim() === '') return;
+    const handleSendMessage = async (question) => {
+        const userMessage = { role: 'user', content: question };
+        const newMessages = [...messages, userMessage];
+        setMessages(newMessages);
+        setLoading(true);
 
-    const userMessage = {
-      id: Date.now(),
-      text: inputText,
-      sender: 'user',
-      timestamp: new Date()
-    };
-
-    setMessages(prev => [...prev, userMessage]);
-    setInputText('');
-
-    setTimeout(() => {
-      const randomResponse = botResponses[Math.floor(Math.random() * botResponses.length)];
-      const botMessage = {
-        id: Date.now() + 1,
-        text: randomResponse,
-        sender: 'bot',
-        timestamp: new Date()
-      };
-      setMessages(prev => [...prev, botMessage]);
-    }, 500);
-  };
-
+        try {
+            const respuesta = await sendMessage(question);
+            const botMessage = { role: 'bot', content: respuesta };
+            setMessages((prevMessages) => [...prevMessages, botMessage]);
+        } catch (error) {
+            setMessages((prevMessages) => [
+                ...prevMessages,
+                { role: 'bot', content: 'Error al comunicarse con el servidor.' }
+            ]);
+        } finally {
+            setLoading(false);
+        }
+        setMessages(prev => [...prev, userMessage]);
+        setInputText('');
+    
+        setTimeout(() => {
+          const randomResponse = botResponses[Math.floor(Math.random() * botResponses.length)];
+          const botMessage = {
+            id: Date.now() + 1,
+            text: randomResponse,
+            sender: 'bot',
+            timestamp: new Date()
+          };
+          setMessages(prev => [...prev, botMessage]);
+        }, 500);
+        
   const handleClearHistory = async () => {
     await AsyncStorage.removeItem(STORAGE_KEY).catch(() => {});
     setMessages([ { ...initialBotMsg, id: Date.now() } ]);
   };
 
+   
+
+
   // --- Formatear la hora de los mensajes
   const formatTime = (date) => new Date(date).toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' });
+
+    
+};
+
+
+
 
   return (
     <SafeAreaView style={styles.container}>

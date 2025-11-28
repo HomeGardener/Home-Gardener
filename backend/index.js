@@ -12,7 +12,7 @@ import PlantasRoutes from './src/controllers/plantas-controller.js';
 import SensoresRoutes from './src/controllers/sensores-controller.js';
 import AmbienteRoutes from './src/controllers/ambiente-controller.js';
 import RiegoRoutes from './src/controllers/riego-controller.js';
-
+import ChatbotRoutes from './src/controllers/chatbot-controller.js';
 
 // Validar variables de entorno críticas
 const hasDbUrl = !!process.env.DB_URL;
@@ -61,6 +61,7 @@ app.use('/api/plantas', PlantasRoutes);
 app.use('/api/sensores', SensoresRoutes);
 app.use('/api/ambiente', AmbienteRoutes);
 app.use('/api/riego', RiegoRoutes);
+app.use('/api/chat', ChatbotRoutes);
 
 // Ruta de salud del servidor
 app.get('/health', (req, res) => {
