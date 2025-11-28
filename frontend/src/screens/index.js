@@ -16,3 +16,4 @@ export { default as HealthCheck } from '../screens/HealthStatus';
 export { default as ChatbotScreen } from '../screens/ChatbotScreen';
 export { default as InfoSistemaRiego } from '../screens/InfoSistemaRiego';
 export { default as ComprarSistemaRiego } from '../screens/ComprarSistemaRiego';
+export { default as HistorialDeChats } from './HistorialDeChats';

@@ -1,3 +1,4 @@
+// src/navigation/AppNavigator.js
 import React from 'react';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 
@@ -20,131 +21,142 @@ import {
   InfoSistemaRiego,
   ComprarSistemaRiego,
   HistorialDeChats
-} from '../screens'
+} from '../screens';
 
-import Layout from '../components/Layout';  
-import withLayout from '../utils/withLayout';  // Importa el HOC
+import withLayout from '../utils/withLayout';
 import ProtectedRoute from '../components/ProtectedRoute';
 
 const Stack = createNativeStackNavigator();
 
+// Envolvemos cada screen con Layout
+const HomeWithLayout                 = withLayout(HomeScreen);
+const PlantasWithLayout              = withLayout(PlantasScreen);
+const AgregarPlantaWithLayout        = withLayout(AgregarPlanta);
+const AgregarAmbienteWithLayout      = withLayout(AgregarAmbiente);
+const QRWithLayout                   = withLayout(QRScreen);
+const InfoWithLayout                 = withLayout(InfoScreen);
+const PerfilWithLayout               = withLayout(PerfilScreen);
+const EditarPerfilWithLayout         = withLayout(EditarPerfilScreen);
+const InfoPlantaWithLayout           = withLayout(InfoPlantaScreen);
+const ChatbotWithLayout              = withLayout(ChatbotScreen);
+const InfoSistemaRiegoWithLayout     = withLayout(InfoSistemaRiego);
+const ComprarSistemaRiegoWithLayout  = withLayout(ComprarSistemaRiego);
+const HistorialDeChatsWithLayout     = withLayout(HistorialDeChats);
+
 export default function AppNavigator() {
   return (
     <Stack.Navigator initialRouteName="Splash" screenOptions={{ headerShown: false }}>
+      {/* Rutas públicas */}
       <Stack.Screen name="Splash" component={SplashScreen} />
       <Stack.Screen name="Bienvenido" component={BienvenidoScreen} />
       <Stack.Screen name="Login" component={LoginScreen} />
       <Stack.Screen name="Register" component={RegisterScreen} />
-      
-      {/* Rutas protegidas que requieren autenticación */}
-      <Stack.Screen 
-        name="Chatbot" 
-        component={withLayout((props) => (
+      <Stack.Screen name="ForgotPassword" component={ForgotPasswordScreen} />
+
+      {/* Rutas protegidas */}
+      <Stack.Screen name="Home">
+        {(props) => (
           <ProtectedRoute>
-            <ChatbotScreen {...props} />
+            <HomeWithLayout {...props} />
           </ProtectedRoute>
-        ))} 
-      />
-      <Stack.Screen 
-        name="HistorialDeChats" 
-        component={withLayout((props) => (
+        )}
+      </Stack.Screen>
+
+      <Stack.Screen name="Plantas">
+        {(props) => (
           <ProtectedRoute>
-            <HistorialDeChats {...props} />
+            <PlantasWithLayout {...props} />
           </ProtectedRoute>
-        ))} 
-      />
-      <Stack.Screen 
-        name="Home" 
-        component={withLayout((props) => (
+        )}
+      </Stack.Screen>
+
+      <Stack.Screen name="AgregarPlanta">
+        {(props) => (
           <ProtectedRoute>
-            <HomeScreen {...props} />
+            <AgregarPlantaWithLayout {...props} />
           </ProtectedRoute>
-        ))} 
-      />
-      <Stack.Screen 
-        name="Plantas" 
-        component={withLayout((props) => (
+        )}
+      </Stack.Screen>
+
+      <Stack.Screen name="AgregarAmbiente">
+        {(props) => (
           <ProtectedRoute>
-            <PlantasScreen {...props} />
+            <AgregarAmbienteWithLayout {...props} />
           </ProtectedRoute>
-        ))} 
-      />
-      <Stack.Screen 
-        name="AgregarPlanta" 
-        component={withLayout((props) => (
+        )}
+      </Stack.Screen>
+
+      <Stack.Screen name="QR">
+        {(props) => (
           <ProtectedRoute>
-            <AgregarPlanta {...props} />
+            <QRWithLayout {...props} />
           </ProtectedRoute>
-        ))} 
-      />
-      <Stack.Screen 
-        name="AgregarAmbiente" 
-        component={withLayout((props) => (
+        )}
+      </Stack.Screen>
+
+      <Stack.Screen name="Info">
+        {(props) => (
           <ProtectedRoute>
-            <AgregarAmbiente {...props} />
+            <InfoWithLayout {...props} />
           </ProtectedRoute>
-        ))} 
-      />
-      <Stack.Screen 
-        name="QR" 
-        component={withLayout((props) => (
+        )}
+      </Stack.Screen>
+
+      <Stack.Screen name="Perfil">
+        {(props) => (
           <ProtectedRoute>
-            <QRScreen {...props} />
+            <PerfilWithLayout {...props} />
           </ProtectedRoute>
-        ))} 
-      />
-      <Stack.Screen 
-        name="Info" 
-        component={withLayout((props) => (
+        )}
+      </Stack.Screen>
+
+      <Stack.Screen name="EditarPerfil">
+        {(props) => (
           <ProtectedRoute>
-            <InfoScreen {...props} />
+            <EditarPerfilWithLayout {...props} />
           </ProtectedRoute>
-        ))} 
-      />
-      <Stack.Screen 
-        name="Perfil" 
-        component={withLayout((props) => (
+        )}
+      </Stack.Screen>
+
+      <Stack.Screen name="InfoPlanta">
+        {(props) => (
           <ProtectedRoute>
-            <PerfilScreen {...props} />
+            <InfoPlantaWithLayout {...props} />
           </ProtectedRoute>
-        ))} 
-      />
-      <Stack.Screen 
-        name="EditarPerfil" 
-        component={withLayout((props) => (
+        )}
+      </Stack.Screen>
+
+      <Stack.Screen name="Chatbot">
+        {(props) => (
           <ProtectedRoute>
-            <EditarPerfilScreen {...props} />
+            <ChatbotWithLayout {...props} />
           </ProtectedRoute>
-        ))} 
-      />
-      <Stack.Screen 
-        name="InfoPlanta" 
-        component={withLayout((props) => (
+        )}
+      </Stack.Screen>
+
+      <Stack.Screen name="HistorialDeChats">
+        {(props) => (
           <ProtectedRoute>
-            <InfoPlantaScreen {...props} />
+            <HistorialDeChatsWithLayout {...props} />
           </ProtectedRoute>
-        ))} 
-      />
-      <Stack.Screen 
-        name="InfoSistemaRiego" 
-        component={withLayout((props) => (
+        )}
+      </Stack.Screen>
+
+      <Stack.Screen name="InfoSistemaRiego">
+        {(props) => (
           <ProtectedRoute>
-            <InfoSistemaRiego {...props} />
+            <InfoSistemaRiegoWithLayout {...props} />
           </ProtectedRoute>
-        ))} 
-      />
-      <Stack.Screen 
-        name="ComprarSistemaRiego" 
-        component={withLayout((props) => (
+        )}
+      </Stack.Screen>
+
+      <Stack.Screen name="ComprarSistemaRiego">
+        {(props) => (
           <ProtectedRoute>
-            <ComprarSistemaRiego {...props} />
+            <ComprarSistemaRiegoWithLayout {...props} />
           </ProtectedRoute>
-        ))} 
-      />
-      <Stack.Screen 
-        name="ForgotPassword" 
-        component={ForgotPasswordScreen}
-      />
+        )}
+      </Stack.Screen>
     </Stack.Navigator>
   );
 }
