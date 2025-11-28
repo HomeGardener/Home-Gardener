@@ -1,4 +1,5 @@
 import AmbienteRepository from '../repositories/ambiente-repository.js';
+import AmbienteRepository from '../repositories/ambiente-repository.js';
 import AppError from '../utils/AppError.js';
 import { StatusCodes } from 'http-status-codes';
 import { validaciones } from '../utils/validaciones.js';
@@ -9,6 +10,7 @@ export default class AmbienteService {
   async agregar({ nombre, idUsuario }) {
     if (!(await validator.isValidString(nombre)) || !idUsuario)
       throw new AppError('Valores de campos inválidos', StatusCodes.BAD_REQUEST);
+    }
 
     const ambiente = await repo.buscarAmbiente(nombre, idUsuario);
     if(!ambiente){
@@ -29,7 +31,7 @@ export default class AmbienteService {
   }
 
   async editar(id, { nombre, idUsuario }) {
-    if (!(await validator.isValidString(nombre, 'Nombre')))
+    if (!validator.isValidString(nombre))
       throw new AppError('El nombre del ambiente es obligatorio y debe ser válido', StatusCodes.BAD_REQUEST);
 
     const ambiente = await repo.findById(id);

@@ -1,10 +1,10 @@
-import bcrypt from 'bcrypt';
+import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import UserRepository from '../repositories/user-repository.js';
 import {validaciones} from '../utils/validaciones.js'
-
 import AppError from '../utils/AppError.js';
 import { StatusCodes } from 'http-status-codes';
+import StorageService from './storage-service.js'
 
 
 
@@ -12,31 +12,39 @@ const JWT_SECRET = process.env.JWT_SECRET || 'clave_supersecreta';
 
 const validator = new validaciones();
 const userRepo = new UserRepository();
+const storageServ = new StorageService();
 
 
 export default class AuthService {
   async register({ nombre, email, password, direccion }) {
     if (!validator.isValidEmail(email) || !validator.isValidPassword(password) || !validator.isValidString(nombre) || !validator.isValidString(direccion))
       throw new AppError('Formato de campos inválido', StatusCodes.BAD_REQUEST);
-
+  
     const exists = await userRepo.emailExists(email.toLowerCase());
     if (exists) throw new AppError('El email ya está registrado', StatusCodes.CONFLICT);
-
+  
     const hashedPassword = await bcrypt.hash(password, 10);
+  
+    if(imagen){
+      const url = storageServ.uploadFile(foto, "perfil");
+    }
+
     const newUser = await userRepo.create(
       nombre.trim(),
       email.toLowerCase().trim(),
       hashedPassword,
-      direccion.trim()
+      direccion.trim(),
+      url || null 
     );
-
-    const token = jwt.sign({ id: newUser.ID, email: newUser.Email }, JWT_SECRET, { expiresIn: '1d' });
+  
+    const token = jwt.sign({ ID: newUser.ID, email: newUser.Email }, JWT_SECRET, { expiresIn: '1d' });
     return { user: newUser, token };
   }
+  
 
   async login({ email, password }) {
 
-    if (!validator.isValidEmail(email) && !validator.isValidString(password))
+    if (!validator.isValidEmail(email) || !validator.isValidString(password))
       throw new AppError('Formato de campos inválido', StatusCodes.BAD_REQUEST);
 
     const user = await userRepo.findByEmail(email.toLowerCase().trim());
@@ -64,7 +72,8 @@ export default class AuthService {
     return user;
   }
 
-  async updateProfile(id, { nombre, email, password, direccion }) {
+
+  async updateProfile(id, { nombre, email, password, direccion, foto }) {
     let updateFields = {};
 
     if (email) {
@@ -80,17 +89,22 @@ export default class AuthService {
     }
 
     if (nombre) {
-      if (valida.isValidString(nombre))
+      if (!validator.isValidString(nombre))
         throw new AppError('El nombre debe tener al menos 3 caracteres', StatusCodes.BAD_REQUEST);
       updateFields.Nombre = nombre;
     }
 
     if (direccion) {
-      if (valida.isValidString(direccion))
+      if (!validator.isValidString(direccion))
       throw new AppError('La direccion debe tener al menos 3 caracteres', StatusCodes.BAD_REQUEST);
       updateFields.Direccion = direccion.trim();
     }
-    
+
+    if(foto){
+      const url = storageServ.uploadFile(foto, "perfil");
+      updateFields.Foto = url.trim();
+
+    }
 
     if (Object.keys(updateFields).length === 0)
       throw new AppError('No hay campos para actualizar', StatusCodes.BAD_REQUEST);

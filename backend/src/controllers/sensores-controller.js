@@ -103,6 +103,7 @@ export default router;
 import { Router } from 'express';
 import { StatusCodes } from 'http-status-codes';
 import DB_config from '../configs/db_configs.js';
+import DB_config from '../configs/db_configs.js';
 import { Pool } from 'pg';
 import authenticateToken from '../middlewares/auth.js';
 
@@ -321,6 +322,7 @@ router.post('/registrarUltRiego', authenticateToken, async (req, res) => {
     res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({ message: 'Error interno del servidor' });
   }
 });
+
 
 export default router;
 

@@ -23,7 +23,9 @@
   "author": "Home Gardener Team",
   "license": "MIT",
   "dependencies": {
-    "bcrypt": "^6.0.0",
+    "@supabase/supabase-js": "^2.58.0",
+    "arrowy-env": "^2.0.1",
+    "bcryptjs": "^2.4.3",
     "cors": "^2.8.5",
     "dotenv": "^16.6.1",
     "express": "^4.18.2",

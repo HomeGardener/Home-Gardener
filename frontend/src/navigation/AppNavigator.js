@@ -7,16 +7,23 @@ import {
   RegisterScreen, 
   HomeScreen, 
   PlantasScreen, 
+  AgregarPlanta, 
+  AgregarAmbiente,
   QRScreen,
   InfoScreen, 
   PerfilScreen, 
   BienvenidoScreen, 
   ForgotPasswordScreen, 
-  EditarPerfilScreen, 
-  HealthCheck
+  EditarPerfilScreen,
+  InfoPlantaScreen,
+  ChatbotScreen,
+  InfoSistemaRiego,
+  ComprarSistemaRiego,
 } from '../screens'
 
-import Layout from '../components/Layout';
+import Layout from '../components/Layout';  
+import withLayout from '../utils/withLayout';  // Importa el HOC
+import ProtectedRoute from '../components/ProtectedRoute';
 
 const Stack = createNativeStackNavigator();
 
@@ -27,55 +34,108 @@ export default function AppNavigator() {
       <Stack.Screen name="Bienvenido" component={BienvenidoScreen} />
       <Stack.Screen name="Login" component={LoginScreen} />
       <Stack.Screen name="Register" component={RegisterScreen} />
-      <Stack.Screen name="ForgotPassword" component={ForgotPasswordScreen} />
-
-      <Stack.Screen name="Home">
-        {props => (
-          <Layout navigation={props.navigation}>
+      
+      {/* Rutas protegidas que requieren autenticación */}
+      <Stack.Screen 
+        name="Chatbot" 
+        component={withLayout((props) => (
+          <ProtectedRoute>
+            <ChatbotScreen {...props} />
+          </ProtectedRoute>
+        ))} 
+      />
+      <Stack.Screen 
+        name="Home" 
+        component={withLayout((props) => (
+          <ProtectedRoute>
             <HomeScreen {...props} />
-          </Layout>
-        )}
-      </Stack.Screen>
-
-      <Stack.Screen name="Plantas">
-        {props => (
-          <Layout navigation={props.navigation}>
+          </ProtectedRoute>
+        ))} 
+      />
+      <Stack.Screen 
+        name="Plantas" 
+        component={withLayout((props) => (
+          <ProtectedRoute>
             <PlantasScreen {...props} />
-          </Layout>
-        )}
-      </Stack.Screen>
-
-      <Stack.Screen name="QR">
-        {props => (
-          <Layout navigation={props.navigation}>
+          </ProtectedRoute>
+        ))} 
+      />
+      <Stack.Screen 
+        name="AgregarPlanta" 
+        component={withLayout((props) => (
+          <ProtectedRoute>
+            <AgregarPlanta {...props} />
+          </ProtectedRoute>
+        ))} 
+      />
+      <Stack.Screen 
+        name="AgregarAmbiente" 
+        component={withLayout((props) => (
+          <ProtectedRoute>
+            <AgregarAmbiente {...props} />
+          </ProtectedRoute>
+        ))} 
+      />
+      <Stack.Screen 
+        name="QR" 
+        component={withLayout((props) => (
+          <ProtectedRoute>
             <QRScreen {...props} />
-          </Layout>
-        )}
-      </Stack.Screen>
-
-      <Stack.Screen name="Info">
-        {props => (
-          <Layout navigation={props.navigation}>
+          </ProtectedRoute>
+        ))} 
+      />
+      <Stack.Screen 
+        name="Info" 
+        component={withLayout((props) => (
+          <ProtectedRoute>
             <InfoScreen {...props} />
-          </Layout>
-        )}
-      </Stack.Screen>
-
-      <Stack.Screen name="Perfil">
-        {props => (
-          <Layout navigation={props.navigation}>
+          </ProtectedRoute>
+        ))} 
+      />
+      <Stack.Screen 
+        name="Perfil" 
+        component={withLayout((props) => (
+          <ProtectedRoute>
             <PerfilScreen {...props} />
-          </Layout>
-        )}
-      </Stack.Screen>
-
-      <Stack.Screen name="EditarPerfil">
-        {props => (
-          <Layout navigation={props.navigation}>
+          </ProtectedRoute>
+        ))} 
+      />
+      <Stack.Screen 
+        name="EditarPerfil" 
+        component={withLayout((props) => (
+          <ProtectedRoute>
             <EditarPerfilScreen {...props} />
-          </Layout>
-        )}
-      </Stack.Screen>
+          </ProtectedRoute>
+        ))} 
+      />
+      <Stack.Screen 
+        name="InfoPlanta" 
+        component={withLayout((props) => (
+          <ProtectedRoute>
+            <InfoPlantaScreen {...props} />
+          </ProtectedRoute>
+        ))} 
+      />
+      <Stack.Screen 
+        name="InfoSistemaRiego" 
+        component={withLayout((props) => (
+          <ProtectedRoute>
+            <InfoSistemaRiego {...props} />
+          </ProtectedRoute>
+        ))} 
+      />
+      <Stack.Screen 
+        name="ComprarSistemaRiego" 
+        component={withLayout((props) => (
+          <ProtectedRoute>
+            <ComprarSistemaRiego {...props} />
+          </ProtectedRoute>
+        ))} 
+      />
+      <Stack.Screen 
+        name="ForgotPassword" 
+        component={ForgotPasswordScreen}
+      />
     </Stack.Navigator>
   );
 }

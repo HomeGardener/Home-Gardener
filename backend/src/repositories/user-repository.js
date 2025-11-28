@@ -14,7 +14,7 @@ export default class UserRepository {
 
   async findById(id) {
     const result = await pool.query(
-      'SELECT "ID", "Nombre", "Email", "Direccion" FROM "Usuario" WHERE "ID" = $1',
+      'SELECT "ID", "Nombre", "Email", "Direccion", "Foto" FROM "Usuario" WHERE "ID" = $1',
       [id]
     );
     return result.rows[0];
@@ -28,16 +28,16 @@ export default class UserRepository {
     return result.rows.length > 0;
   }
 
-  async create(nombre, email, password, direccion) {
+  async create(nombre, email, password, direccion, imagen) {
     const query = `
-      INSERT INTO "Usuario" ("Nombre", "Email", "Password", "Direccion")
-      VALUES ($1, $2, $3, $4)
-      RETURNING "ID", "Nombre", "Email", "Direccion"
+      INSERT INTO "Usuario" ("Nombre", "Email", "Password", "Direccion", "Foto")
+      VALUES ($1, $2, $3, $4, $5)
+      RETURNING "ID", "Nombre", "Email", "Direccion", "Foto"
     `;
-    const values = [nombre, email, password, direccion];
+    const values = [nombre, email, password, direccion, imagen || null];
     const result = await pool.query(query, values);
     return result.rows[0];
-  }
+  }  
 
   async update (id, fields){
     const keys = Object.keys(fields);
@@ -46,7 +46,7 @@ export default class UserRepository {
     const setQuery = keys.map((key, i) => `"${key}" = $${i + 1}`).join(', ');
     const values = [...Object.values(fields), id];
 
-    const query = `UPDATE "Usuario" SET ${setQuery} WHERE "ID" = $${keys.length + 1} RETURNING "ID", "Nombre", "Email", "Direccion"`;
+    const query = `UPDATE "Usuario" SET ${setQuery} WHERE "ID" = $${keys.length + 1} RETURNING "ID", "Nombre", "Email", "Direccion", "Foto"`;
     const result = await pool.query(query, values);
     return result.rows[0];
   }

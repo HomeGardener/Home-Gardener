@@ -1,85 +1,152 @@
 import React, { useEffect, useState } from 'react';
-import { View, TextInput, Button, Text, StyleSheet, Alert, ActivityIndicator } from 'react-native';
+import { View, TextInput, Text, StyleSheet, Alert, ActivityIndicator, Image, TouchableOpacity } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import * as ImagePicker from 'expo-image-picker';
+import { Ionicons } from '@expo/vector-icons';
+import { useAuth } from '../contexts/AuthContext';
+import { getApiBaseUrl } from '../services/api';
 
-export default function EditarPerfilScreen({ navigation }) {
-  const [userData, setUserData] = useState(null);
+const GREEN = '#15A266';
+const LIGHT_BG = '#EAF8EE';
+
+export default function EditarPerfilScreen({ navigation, api, user, baseUrl }) {
   const [nombre, setNombre] = useState('');
   const [email, setEmail] = useState('');
   const [direccion, setDireccion] = useState('');
   const [error, setError] = useState(null);
   const [loading, setLoading] = useState(true);
   const [updating, setUpdating] = useState(false);
+  const [foto, setFoto] = useState(null); // UI opcional, backend no la recibe aún
+  const [original, setOriginal] = useState(null);
+  const { updateUser, user: authUser } = useAuth();
 
   useEffect(() => {
     const loadUser = async () => {
+      setError(null);
       try {
-        const userId = await AsyncStorage.getItem('user_id');
-        if (userId) {
-          const { data, error } = await supabase
-            .from('Usuario')
-            .select('*')
-            .eq('ID', userId)
-            .single();
-
-          if (error) {
-            console.error('Error al cargar usuario:', error);
-            setError('No se pudo cargar la información del usuario');
-          } else {
-            setUserData(data);
-            setNombre(data.nombre || '');
-            setEmail(data.email || '');
-            setDireccion(data.direccion || '');
-          }
-        } else {
-          setError('ID de usuario no encontrado.');
+        const current = authUser || user;
+        if (current) {
+          setNombre(current.Nombre || '');
+          setEmail(current.Email || '');
+          setDireccion(current.Direccion || '');
+          setOriginal(current);
+          setLoading(false);
+          return;
         }
-      } catch (err) {
-        console.error('Error accediendo a AsyncStorage:', err);
-        setError('Error interno al acceder al almacenamiento');
+
+        const token = await AsyncStorage.getItem('token');
+        if (!token) {
+          setLoading(false);
+          setError('No hay sesión activa');
+          return;
+        }
+        const apiBase = baseUrl || getApiBaseUrl();
+        const res = await fetch(`${apiBase}/api/auth/profile`, {
+          method: 'GET',
+          headers: { 'Authorization': `Bearer ${token}` },
+        });
+        if (res.ok) {
+          const data = await res.json();
+          const u = data?.user || {};
+          setNombre(u.Nombre || '');
+          setEmail(u.Email || '');
+          setDireccion(u.Direccion || '');
+          setOriginal(u);
+        } else {
+          setError('No se pudo cargar la información del usuario');
+        }
+      } catch (e) {
+        setError(e?.message || 'No se pudo cargar la información del usuario');
       } finally {
         setLoading(false);
       }
     };
 
     loadUser();
-  }, []);
+  }, [authUser, user, baseUrl]);
+
+  const pickImage = async () => {
+    let result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ImagePicker.MediaType.Images,
+      allowsEditing: true,
+      aspect: [1, 1],
+      quality: 0.5,
+    });
+    if (!result.canceled) {
+      setFoto(result.assets[0].uri);
+    }
+  };
+
+  const validateEmail = (mail) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(mail);
 
   const handleUpdate = async () => {
     setError(null);
+    if (!original) {
+      setError('No hay datos de usuario para comparar');
+      return;
+    }
 
-    if (!nombre.trim() || !email.trim() || !direccion.trim()) {
-      setError('Todos los campos son obligatorios');
+    const trimmedNombre = (nombre || '').trim();
+    const trimmedEmail = (email || '').trim();
+    const trimmedDireccion = (direccion || '').trim();
+
+    const changes = {};
+    if (trimmedNombre && trimmedNombre !== (original.Nombre || '')) {
+      changes.nombre = trimmedNombre;
+    }
+    if (trimmedEmail && trimmedEmail !== (original.Email || '')) {
+      if (!validateEmail(trimmedEmail)) {
+        setError('Formato de email inválido');
+        return;
+      }
+      changes.email = trimmedEmail.toLowerCase();
+    }
+    if (trimmedDireccion && trimmedDireccion !== (original.Direccion || '')) {
+      changes.direccion = trimmedDireccion;
+    }
+
+    if (Object.keys(changes).length === 0) {
+      Alert.alert('Sin cambios', 'No hay cambios para guardar');
       return;
     }
 
     try {
       setUpdating(true);
-      const userId = await AsyncStorage.getItem('user_id');
-      if (!userId) {
-        setError('No se encontró el ID de usuario.');
-        return;
-      }
+      const token = await AsyncStorage.getItem('token');
+      const apiBase = baseUrl || getApiBaseUrl();
+      const res = await fetch(`${apiBase}/api/auth/profile`, {
+        method: 'PUT',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(changes),
+      });
 
-      const { error: updateError } = await supabase
-        .from('Usuario')
-        .update({
-          Nombre: nombre.trim(),
-          Email: email.trim().toLowerCase(),
-          Direccion: direccion.trim(),
-        })
-        .eq('ID', userId);
+      const data = await res.json().catch(() => ({}));
 
-      if (updateError) {
-        console.error('Error actualizando datos:', updateError);
-        setError('No se pudo actualizar la información');
-      } else {
+      if (res.ok) {
+        try {
+          const refreshRes = await fetch(`${apiBase}/api/auth/profile`, {
+            method: 'GET',
+            headers: { 'Authorization': `Bearer ${token}` },
+          });
+          if (refreshRes.ok) {
+            const refreshed = await refreshRes.json();
+            if (refreshed?.user) {
+              await updateUser(refreshed.user);
+            }
+          }
+        } catch {}
+
         Alert.alert('Éxito', 'Tus datos fueron actualizados correctamente');
         navigation.goBack();
+      } else {
+        setError(data?.message || 'No se pudo actualizar la información');
       }
-    } catch (err) {
-      console.error('Error general en la actualización:', err);
-      setError('Ocurrió un error inesperado');
+    } catch (e) {
+      const msg = e?.response?.data?.message || e.message || 'Ocurrió un error inesperado';
+      setError(msg);
     } finally {
       setUpdating(false);
     }
@@ -88,7 +155,7 @@ export default function EditarPerfilScreen({ navigation }) {
   if (loading) {
     return (
       <View style={styles.loadingContainer}>
-        <ActivityIndicator size="large" />
+        <ActivityIndicator size="large" color={GREEN} />
         <Text style={styles.loading}>Cargando datos...</Text>
       </View>
     );
@@ -98,11 +165,23 @@ export default function EditarPerfilScreen({ navigation }) {
     <View style={styles.container}>
       <Text style={styles.title}>Editar Perfil</Text>
 
+      <TouchableOpacity onPress={pickImage} style={styles.avatarContainer}>
+        {foto ? (
+          <Image source={{ uri: foto }} style={styles.avatar} />
+        ) : (
+          <View style={[styles.avatar, styles.avatarPlaceholder]}>
+            <Ionicons name="camera" size={32} color="#555" />
+          </View>
+        )}
+        <Text style={styles.avatarText}>Cambiar foto (no se envía aún)</Text>
+      </TouchableOpacity>
+
       <TextInput
         placeholder="Nombre"
         value={nombre}
         onChangeText={setNombre}
         style={styles.input}
+        placeholderTextColor="#777"
       />
 
       <TextInput
@@ -112,6 +191,7 @@ export default function EditarPerfilScreen({ navigation }) {
         style={styles.input}
         keyboardType="email-address"
         autoCapitalize="none"
+        placeholderTextColor="#777"
       />
 
       <TextInput
@@ -119,26 +199,42 @@ export default function EditarPerfilScreen({ navigation }) {
         value={direccion}
         onChangeText={setDireccion}
         style={styles.input}
+        placeholderTextColor="#777"
       />
 
       {error && <Text style={styles.error}>{error}</Text>}
 
-      <Button title={updating ? 'Guardando...' : 'Guardar cambios'} onPress={handleUpdate} disabled={updating} />
+      <TouchableOpacity style={[styles.button, updating && { opacity: 0.7 }]} onPress={handleUpdate} disabled={updating}>
+        <Text style={styles.buttonText}>{updating ? 'Guardando...' : 'Guardar cambios'}</Text>
+      </TouchableOpacity>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, padding: 20, justifyContent: 'center' },
-  title: { fontSize: 24, fontWeight: 'bold', marginBottom: 20, textAlign: 'center' },
+  container: { flex: 1, padding: 20, backgroundColor: LIGHT_BG },
+  title: { fontSize: 24, fontWeight: '800', color: GREEN, textAlign: 'center', marginBottom: 16 },
   input: {
     marginBottom: 12,
-    padding: 10,
+    padding: 12,
     borderWidth: 1,
-    borderColor: '#ccc',
-    borderRadius: 4,
+    borderColor: '#cfd8dc',
+    borderRadius: 10,
+    backgroundColor: '#fff',
   },
-  error: { color: 'red', marginBottom: 10, textAlign: 'center' },
-  loadingContainer: { flex: 1, justifyContent: 'center', alignItems: 'center' },
-  loading: { marginTop: 10, fontSize: 16 },
+  error: { color: '#D32F2F', marginBottom: 10, textAlign: 'center' },
+  loadingContainer: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: LIGHT_BG },
+  loading: { marginTop: 10, fontSize: 16, color: '#555' },
+  button: {
+    backgroundColor: GREEN,
+    paddingVertical: 14,
+    borderRadius: 10,
+    alignItems: 'center',
+    marginTop: 6,
+  },
+  buttonText: { color: '#fff', fontSize: 16, fontWeight: '700' },
+  avatarContainer: { alignItems: 'center', marginBottom: 16 },
+  avatar: { width: 80, height: 80, borderRadius: 40 },
+  avatarPlaceholder: { backgroundColor: '#ccc', justifyContent: 'center', alignItems: 'center' },
+  avatarText: { color: '#555', marginTop: 6 },
 });

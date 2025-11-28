@@ -9,14 +9,19 @@ const ambienteService = new AmbienteService();
 // Agregar ambiente
 router.post('/agregar', authenticateToken, async (req, res) => {
   try {
-    console.log('REQ.USER:', req.user); 
+    console.log('Received request to add ambiente:', req.body);
     const idUsuario = req.user.ID;
+    console.log('User ID:', idUsuario);
+    
     const result = await ambienteService.agregar({ ...req.body, idUsuario });
+    console.log('Service result:', result);
+    
     res.status(StatusCodes.CREATED).json({
       message: 'Ambiente agregado exitosamente',
       ambienteId: result.ID
     });
   } catch (error) {
+    console.log('Error adding ambiente:', error);
     const statusCode = error.statusCode || StatusCodes.INTERNAL_SERVER_ERROR;
     res.status(statusCode).json({ success: false, message: error.message });
   }
