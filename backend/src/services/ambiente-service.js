@@ -1,23 +1,25 @@
 import AmbienteRepository from '../repositories/ambiente-repository.js';
+import AmbienteRepository from '../repositories/ambiente-repository.js';
 import AppError from '../utils/AppError.js';
 import { StatusCodes } from 'http-status-codes';
 import { validaciones } from '../utils/validaciones.js';
-
 const repo = new AmbienteRepository();
 const validator = new validaciones();
 
 export default class AmbienteService {
-  async agregar({ nombre, temperatura, idUsuario }) {
-    console.log('Service - agregar called with:', { nombre, temperatura, idUsuario });
-    
-    if (!validator.isValidString(nombre) || !validator.isPositivo(Number(temperatura))) {
-      console.log('Validation failed');
+  async agregar({ nombre, idUsuario }) {
+    if (!(await validator.isValidString(nombre)) || !idUsuario)
       throw new AppError('Valores de campos inválidos', StatusCodes.BAD_REQUEST);
     }
 
-    const result = await repo.create(nombre.trim(), Number(temperatura), idUsuario);
-    console.log('Repository result:', result);
-    return result;
+    const ambiente = await repo.buscarAmbiente(nombre, idUsuario);
+    if(!ambiente){
+      const result = await repo.create(nombre.trim(), idUsuario);
+      return result;
+    }else{
+      throw new AppError('Ya tenes un ambiente con este nombre', StatusCodes.BAD_REQUEST);
+    }
+    
   }
 
   async listar(idUsuario) {
