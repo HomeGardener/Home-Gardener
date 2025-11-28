@@ -34,7 +34,6 @@ export default function AppNavigator() {
       <Stack.Screen name="Bienvenido" component={BienvenidoScreen} />
       <Stack.Screen name="Login" component={LoginScreen} />
       <Stack.Screen name="Register" component={RegisterScreen} />
-      <Stack.Screen name="ForgotPassword" component={ForgotPasswordScreen} />
       
       {/* Rutas protegidas que requieren autenticación */}
       <Stack.Screen 
@@ -132,6 +131,10 @@ export default function AppNavigator() {
             <ComprarSistemaRiego {...props} />
           </ProtectedRoute>
         ))} 
+      />
+      <Stack.Screen 
+        name="ForgotPassword" 
+        component={ForgotPasswordScreen}
       />
     </Stack.Navigator>
   );

@@ -24,7 +24,7 @@ export default {
     android: {
       package: 'com.matiasdubin.homegardener',
       adaptiveIcon: {
-        foregroundImage: './assets/adaptive-icon.png',
+        foregroundImage: './assets/image1.png',
         backgroundColor: '#ffffff',
       },
       edgeToEdgeEnabled: true,
@@ -34,7 +34,7 @@ export default {
       ],
     },
     web: {
-      favicon: './assets/favicon.png',
+      favicon: './assets/image1.png',
     },
     plugins: [
       'expo-secure-store'
