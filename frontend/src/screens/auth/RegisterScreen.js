@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from "react";
+import React, { useState } from "react";
 import {
   View,
   Text,
@@ -12,7 +12,7 @@ import {
   Dimensions,
   Image,
 } from "react-native";
-import { createAPI } from "../../services/api";
+import { getApiBaseUrl } from '../../services/api';
 import Ionicons from "react-native-vector-icons/Ionicons";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useAuth } from "../../contexts/AuthContext";
@@ -22,8 +22,7 @@ const GREEN = "#15A266";
 const DARK_GREEN = "#0D5C3C";
 const LIGHT_BG = "#EAF8EE";
 
-export default function RegisterScreen({ navigation, baseUrl = process.env.EXPO_PUBLIC_API_URL }) {
-  const api = useMemo(() => createAPI(baseUrl), [baseUrl]);
+export default function RegisterScreen({ navigation, baseUrl = getApiBaseUrl() }) {
   const { register } = useAuth();
   const [status, requestPermission] = ImagePicker.useMediaLibraryPermissions();
 
@@ -55,6 +54,11 @@ export default function RegisterScreen({ navigation, baseUrl = process.env.EXPO_
       setLoading(false);
       return;
     }
+    if (nombre.trim() && nombre.trim().length < 3) {
+      setError('El nombre debe tener al menos 3 caracteres');
+      setLoading(false);
+      return;
+    }
     if (!validatePassword(password)) {
       setError("La contraseña debe tener al menos 8 caracteres, una letra y un número");
       setLoading(false);
@@ -71,20 +75,17 @@ export default function RegisterScreen({ navigation, baseUrl = process.env.EXPO_
       if (foto) {
         formData.append('Foto', {
           uri: foto.uri,
-          name: foto.fileName || `foto.${foto.uri.split('.').pop() || 'jpg'}`,
-          type: foto.type,
+          name: foto.fileName || 'perfil.jpg',
+          type: foto.mimeType || 'image/jpeg',
         });
       }
 
       const response = await fetch(`${baseUrl}/api/auth/register`, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'multipart/form-data',
-        },
         body: formData,
       });
 
-      const data = await response.json();
+      const data = await response.json().catch(() => ({}));
       if (response.ok && data.token && data.user) {
         const success = await register(data.user, data.token);
         if (success) {
@@ -93,6 +94,8 @@ export default function RegisterScreen({ navigation, baseUrl = process.env.EXPO_
             `Bienvenido/a ${data.user.Nombre || 'usuario'}! Ya puedes usar la aplicación.`,
             [{ text: "¡Perfecto!", onPress: () => navigation.navigate("Home") }]
           );
+        } else {
+          setError('No se pudo guardar la sesión. Inténtalo de nuevo.');
         }
       } else {
         setError(data.message || "Error en el registro");
@@ -105,11 +108,8 @@ export default function RegisterScreen({ navigation, baseUrl = process.env.EXPO_
   };
 
   const pickImage = async () => {
-    console.log("pickImage llamado");
     if (!status?.granted) {
-      console.log("Solicitando permiso");
       const permission = await requestPermission();
-      console.log("Permiso resultado:", permission.granted);
       if (!permission.granted) {
         Alert.alert('Permiso denegado', 'Necesitas dar permiso para acceder a la galería.');
         return;
@@ -121,7 +121,6 @@ export default function RegisterScreen({ navigation, baseUrl = process.env.EXPO_
         aspect: [1, 1],
         quality: 0.5,
       });
-      console.log("Resultado picker:", result);
       if (!result.canceled) {
         setFoto(result.assets[0]);
       }
@@ -159,7 +158,6 @@ export default function RegisterScreen({ navigation, baseUrl = process.env.EXPO_
             <View style={styles.form}>
               <TouchableOpacity
                 onPress={() => {
-                  console.log("Botón subir foto presionado");
                   pickImage();
                 }}
                 style={{ alignItems: 'center', marginBottom: 10 }}

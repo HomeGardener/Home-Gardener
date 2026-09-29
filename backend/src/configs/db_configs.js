@@ -1,30 +1,22 @@
-import dotenv from 'dotenv';
-dotenv.config();
+import 'dotenv/config';
 
 const { DB_URL } = process.env;
+const dbPassword = process.env.DB_PASSWORD ?? process.env.DB_password;
 
-let DB_config;
-
-if (DB_URL) {
-  // Usamos la cadena de conexión completa si existe DB_URL
-  DB_config = {
-    connectionString: DB_URL,
-    ssl: {
-      rejectUnauthorized: false // Si estás usando un servicio como Supabase o Heroku, normalmente es necesario para SSL
+const DB_config = DB_URL
+  ? {
+      connectionString: DB_URL,
+      ssl: {
+        rejectUnauthorized: process.env.DB_SSL_REJECT_UNAUTHORIZED !== 'false',
+      },
     }
-  };
-} else {
-  // Configuración local por variables individuales si no existe DB_URL
-  DB_config = {
-    host: process.env.DB_HOST || 'localhost',
-    port: process.env.DB_PORT || 5432,
-    user: process.env.DB_USER || 'postgres',
-    password: process.env.DB_PASSWORD || '',
-    database: process.env.DB_NAME || 'mi_base_de_datos',
-    ssl: false
-  };
-}
-
-console.log('DB Config cargada:', DB_config);
+  : {
+      host: process.env.DB_HOST || 'localhost',
+      port: Number(process.env.DB_PORT || 5432),
+      user: process.env.DB_USER || 'postgres',
+      password: dbPassword || '',
+      database: process.env.DB_NAME || 'home_gardener_db',
+      ssl: false,
+    };
 
 export default DB_config;

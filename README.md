@@ -1,184 +1,88 @@
-# 🌱 Home Gardener
+# Home Gardener
 
-Aplicación móvil para la gestión inteligente de plantas y jardines domésticos.
+Aplicación móvil para administrar plantas y ambientes, consultar lecturas de sensores y llevar una agenda local de cuidados.
 
-## 🚀 Características
+## Arquitectura
 
-- **Gestión de Plantas**: Agregar, editar y monitorear el estado de tus plantas
-- **Control de Ambientes**: Crear y gestionar diferentes espacios de cultivo
-- **Monitoreo de Sensores**: Seguimiento en tiempo real de temperatura y humedad
-- **Sistema de Riego**: Control automático del riego de las plantas
-- **ChatBot Inteligente**: Asistente virtual para consejos de jardinería
-- **Autenticación Segura**: Sistema de login y registro con JWT
+- `frontend/`: React Native y Expo; navegación con React Navigation.
+- `backend/`: API REST con Express; servicios y repositorios PostgreSQL (`pg`).
+- Supabase Storage: alojamiento opcional para fotos de perfil.
+- `update-bd/`: comandos manuales para sincronizar catálogos de especies y enfermedades.
 
-## 🏗️ Arquitectura
+La app y la API usan JWT. La API consulta PostgreSQL; Supabase no sustituye esa conexión. El historial de chat y la agenda se guardan localmente, separados por usuario.
 
-- **Frontend**: React Native con Expo
-- **Backend**: Node.js con Express
-- **Base de Datos**: PostgreSQL
-- **Autenticación**: JWT (JSON Web Tokens)
-- **Subida de Archivos**: Multer
+## Requisitos
 
-## 📋 Prerrequisitos
+- Node.js 18 o superior y npm.
+- PostgreSQL con el esquema esperado por la API.
+- Expo Go para probar en un teléfono, o un emulador Android/iOS.
 
-- Node.js >= 18.0.0
-- npm >= 8.0.0
-- PostgreSQL
-- Expo CLI (para desarrollo móvil)
+El repositorio no contiene una migración canónica versionada para crear el esquema de producción. Verifica las tablas y tipos de tu base existente antes de ejecutar la API; no apliques SQL de prueba directamente sobre una base con datos.
 
-## 🛠️ Instalación
+## Backend
 
-### 1. Clonar el repositorio
-
-```bash
-git clone https://github.com/Eldubo/Home-Gardener.git
-cd Home-Gardener
-```
-
-### 2. Configurar el Backend
-
-```bash
+```sh
 cd backend
 npm install
-
-# Copiar archivo de variables de entorno
-cp env.example .env
-
-# Editar .env con tus configuraciones
-nano .env
 ```
 
-**Variables de entorno requeridas:**
-- `JWT_SECRET`: Clave secreta para JWT
-- `DB_HOST`, `DB_USER`, `DB_PASSWORD`, `DB_NAME`: Configuración de PostgreSQL
-- `PORT`: Puerto del servidor (por defecto 3000)
+Crea `backend/.env` a partir de `backend/env.example`. Configura `DB_URL` o todos los campos `DB_HOST`, `DB_PORT`, `DB_USER`, `DB_PASSWORD` y `DB_NAME`, junto con `JWT_SECRET`. Las credenciales de Supabase solo son necesarias para subir imágenes. Si usas una clave service role, mantenla únicamente en el entorno del servidor.
 
-### 3. Configurar la Base de Datos
-
-```sql
--- Crear base de datos
-CREATE DATABASE home_gardener_db;
-
--- Ejecutar scripts de migración (si existen)
--- psql -d home_gardener_db -f migrations/001_initial_schema.sql
-```
-
-### 4. Configurar el Frontend
-
-```bash
-cd ../frontend
-npm install
-
-# Copiar archivo de variables de entorno
-cp env.example .env
-
-# Editar .env con la URL de tu API
-nano .env
-```
-
-**Variables de entorno requeridas:**
-- `EXPO_PUBLIC_API_URL`: URL de tu API backend
-
-## 🚀 Ejecutar la Aplicación
-
-### Backend
-
-```bash
-cd backend
-
-# Desarrollo
+```sh
 npm run dev
-
-# Producción
-npm start
 ```
 
-### Frontend
+La API inicia en `http://localhost:3000`. `GET /health` comprueba que el proceso responde; no comprueba la conexión a la base.
 
-```bash
+## Frontend
+
+```sh
 cd frontend
-
-# Iniciar Expo
-npm start
-
-# Ejecutar en Android
-npm run android
-
-# Ejecutar en iOS
-npm run ios
+npm install
 ```
 
-## 📱 Uso de la Aplicación
+Copia `frontend/env.example` a `frontend/.env` y configura `EXPO_PUBLIC_API_URL`. Expo Go debe poder alcanzar esa dirección desde el teléfono: usa la IP local de la computadora en una red Wi-Fi, no `localhost`. Para el emulador Android suele usarse `http://10.0.2.2:3000`; para web o un simulador iOS local, `http://localhost:3000`.
 
-1. **Registro/Login**: Crea una cuenta o inicia sesión
-2. **Agregar Ambiente**: Define espacios de cultivo con temperatura
-3. **Agregar Plantas**: Asigna plantas a ambientes específicos
-4. **Monitoreo**: Revisa el estado de tus plantas y sensores
-5. **ChatBot**: Obtén consejos de jardinería personalizados
+```sh
+npm start
+```
 
-## 🔒 Seguridad
+Los comandos `npm run android`, `npm run ios` y `npm run web` también están disponibles dentro de `frontend/`.
 
-- Autenticación JWT con expiración
-- Validación de entrada en todos los endpoints
-- CORS configurado para producción
-- Subida de archivos con validación de tipo y tamaño
-- Manejo seguro de contraseñas con bcrypt
+## API disponible
 
-## 🐛 Solución de Problemas
+Las rutas privadas requieren `Authorization: Bearer <token>`.
 
-### Error de conexión a la base de datos
-- Verifica que PostgreSQL esté ejecutándose
-- Confirma las credenciales en `.env`
-- Asegúrate de que la base de datos exista
+| Área | Rutas |
+| --- | --- |
+| Sesión | `POST /api/auth/register`, `POST /api/auth/login`, `GET/PUT /api/auth/profile` |
+| Plantas | `GET /api/plantas/tipos`, `GET /api/plantas/misPlantas`, `POST /api/plantas/agregar`, `PUT /api/plantas/modificarNombre`, `POST /api/plantas/actualizarFoto`, `DELETE /api/plantas/eliminar` |
+| Ambientes | `POST /api/ambiente/agregar`, `GET /api/ambiente/listar`, `PUT /api/ambiente/editar/:id` |
+| Sensores | `GET /api/sensores/datosSensores`, `GET /api/sensores/ultRiego`, `POST /api/sensores/subirDatosPlanta`, `POST /api/sensores/registrarUltRiego`, `PUT /api/sensores/conectarModulo`, `DELETE /api/sensores/desconectarModulo` |
 
-### Error de JWT
-- Verifica que `JWT_SECRET` esté configurado
-- Confirma que el token no haya expirado
+Las lecturas aceptan humedad entre 0 y 100% y temperatura entre -40 y 85 °C. El envío de sensores requiere actualmente un JWT de usuario; no hay un protocolo de identidad para dispositivos IoT.
 
-### Error de CORS
-- En desarrollo, CORS permite todos los orígenes
-- En producción, configura `FRONTEND_URL` correctamente
+## Funciones pendientes de integración
 
-## 📝 Scripts Disponibles
+El backend devuelve `501 Not Implemented` para pagos, recuperación de contraseña, envío de correos y recordatorios. No hay un controlador de bomba ni un endpoint que active físicamente el riego. El análisis de fotos y las respuestas del chatbot son demostrativos. No uses estas funciones para procesar compras ni automatizar riego real.
 
-### Backend
-- `npm start`: Iniciar servidor de producción
-- `npm run dev`: Iniciar servidor de desarrollo con nodemon
-- `npm run clean`: Limpiar node_modules
-- `npm run reinstall`: Reinstalar dependencias
+## Carga de catálogos
 
-### Frontend
-- `npm start`: Iniciar Expo
-- `npm run android`: Ejecutar en Android
-- `npm run ios`: Ejecutar en iOS
-- `npm run web`: Ejecutar en web
+`update-bd/` es una herramienta CLI independiente, no una interfaz web. Sus comandos necesitan credenciales y servicios externos según la tarea:
 
-## 🤝 Contribuir
+```sh
+cd update-bd
+npm install
+npm start -- especies
+npm start -- enfermedades
+```
 
-1. Fork el proyecto
-2. Crea una rama para tu feature (`git checkout -b feature/AmazingFeature`)
-3. Commit tus cambios (`git commit -m 'Add some AmazingFeature'`)
-4. Push a la rama (`git push origin feature/AmazingFeature`)
-5. Abre un Pull Request
+Configura sus variables en `update-bd/.env`. La carga de especies requiere Supabase, `TREFLE_TOKEN` y un servidor Ollama con el modelo configurado. La carga de enfermedades requiere PostgreSQL y `PERENUAL_KEY`. Las escrituras de especies usan upsert para conservar las referencias existentes.
 
-## 📄 Licencia
+## Verificaciones del backend
 
-Este proyecto está bajo la Licencia MIT - ver el archivo [LICENSE](LICENSE) para detalles.
-
-## 👥 Equipo
-
-- **Desarrollador Principal**: [Eldubo](https://github.com/Eldubo)
-- **Froentend developer**: [tomi954](https://github.com/tomi954)
-- **Proyect leader**: [Lola-Nieto](https://github.com/Lola-Nieto)
-
-## 📞 Soporte
-
-Si tienes problemas o preguntas:
-- Abre un issue en GitHub
-- Contacta al equipo de desarrollo
-
----
-
-**🌱 ¡Haz que tu jardín sea inteligente con Home Gardener! 🌱**
-
- 
+```sh
+cd backend
+npm test
+npm run check
+```

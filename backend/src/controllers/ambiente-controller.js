@@ -9,21 +9,17 @@ const ambienteService = new AmbienteService();
 // Agregar ambiente
 router.post('/agregar', authenticateToken, async (req, res) => {
   try {
-    console.log('Received request to add ambiente:', req.body);
     const idUsuario = req.user.ID;
-    console.log('User ID:', idUsuario);
-    
     const result = await ambienteService.agregar({ ...req.body, idUsuario });
-    console.log('Service result:', result);
-    
-    res.status(StatusCodes.CREATED).json({
+    return res.status(StatusCodes.CREATED).json({
+      success: true,
       message: 'Ambiente agregado exitosamente',
-      ambienteId: result.ID
+      ambienteId: result.ID,
     });
   } catch (error) {
-    console.log('Error adding ambiente:', error);
     const statusCode = error.statusCode || StatusCodes.INTERNAL_SERVER_ERROR;
-    res.status(statusCode).json({ success: false, message: error.message });
+    if (statusCode >= 500) console.error('Error agregando ambiente:', error.message);
+    return res.status(statusCode).json({ success: false, message: statusCode >= 500 ? 'Error interno del servidor' : error.message });
   }
 });
 
@@ -32,13 +28,15 @@ router.get('/listar', authenticateToken, async (req, res) => {
   try {
     const idUsuario = req.user.ID;
     const ambientes = await ambienteService.listar(idUsuario);
-    res.status(StatusCodes.OK).json({
+    return res.status(StatusCodes.OK).json({
+      success: true,
       message: 'Ambientes obtenidos correctamente',
       ambientes
     });
   } catch (error) {
     const statusCode = error.statusCode || StatusCodes.INTERNAL_SERVER_ERROR;
-    res.status(statusCode).json({ success: false, message: error.message });
+    if (statusCode >= 500) console.error('Error listando ambientes:', error.message);
+    return res.status(statusCode).json({ success: false, message: statusCode >= 500 ? 'Error interno del servidor' : error.message });
   }
 });
 
@@ -47,13 +45,15 @@ router.put('/editar/:id', authenticateToken, async (req, res) => {
   try {
     const idUsuario = req.user.ID;
     const ambiente = await ambienteService.editar(req.params.id, { ...req.body, idUsuario });
-    res.status(StatusCodes.OK).json({
+    return res.status(StatusCodes.OK).json({
+      success: true,
       message: 'Ambiente actualizado exitosamente',
       ambiente
     });
   } catch (error) {
     const statusCode = error.statusCode || StatusCodes.INTERNAL_SERVER_ERROR;
-    res.status(statusCode).json({ success: false, message: error.message });
+    if (statusCode >= 500) console.error('Error editando ambiente:', error.message);
+    return res.status(statusCode).json({ success: false, message: statusCode >= 500 ? 'Error interno del servidor' : error.message });
   }
 });
 

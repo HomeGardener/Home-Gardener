@@ -713,7 +713,7 @@
 	"variable": [
 		{
 			"key": "token",
-			"value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6ImVlMDIxZjlmLWUxYjUtNDNlNC05MGU5LWU4ZDU3NDg1N2ExOSIsImVtYWlsIjoibmlldG9sb2xhOTlAZ21haWwuY29tIiwiaWF0IjoxNzU1ODYzNjM3LCJleHAiOjE3NTU5NTAwMzd9.MoczUuYAyLTadY2EzYc7aUcH75ApAh8EFthZQ6NNAtg"
+			"value": ""
 		}
 	]
 }

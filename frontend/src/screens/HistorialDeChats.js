@@ -4,10 +4,12 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { useFocusEffect } from '@react-navigation/native';
 import { useCallback } from 'react';
-
-const STORAGE_KEY = 'chat_history';
+import { useAuth } from '../contexts/AuthContext';
+import { getChatHistoryKey } from '../services/chatStorage';
 
 export default function HistorialDeChats({ navigation }) {
+  const { user } = useAuth();
+  const storageKey = getChatHistoryKey(user?.ID || user?.id);
   const [chats, setChats] = useState([]);
 
   // Cargar los chats cada vez que la pantalla gana foco
@@ -15,7 +17,7 @@ export default function HistorialDeChats({ navigation }) {
     useCallback(() => {
       const loadChats = async () => {
         try {
-          const raw = await AsyncStorage.getItem(STORAGE_KEY);
+          const raw = await AsyncStorage.getItem(storageKey);
           if (!raw) {
             setChats([]);
             return;
@@ -30,7 +32,7 @@ export default function HistorialDeChats({ navigation }) {
       };
 
       loadChats();
-    }, [])
+    }, [storageKey])
   );
 
   const viewChat = (chat) => {
@@ -68,7 +70,7 @@ export default function HistorialDeChats({ navigation }) {
 
       <TouchableOpacity
         style={styles.newChatButton}
-        onPress={() => navigation.navigate('Chatbot')}
+        onPress={() => navigation.navigate('Chatbot', { chatId: null, newChatId: Date.now() })}
       >
         <Text style={styles.newChatButtonText}>Iniciar Nuevo Chat</Text>
       </TouchableOpacity>

@@ -11,21 +11,35 @@ const router = Router();
 
 const plantaService = new PlantaService();
 
+router.get('/tipos', authenticateToken, async (req, res) => {
+  try {
+    const tipos = await plantaService.listarTipos();
+    return res.status(StatusCodes.OK).json(tipos);
+  } catch (error) {
+    console.error('Error listando tipos de plantas:', error.message);
+    return res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({
+      success: false,
+      message: 'No se pudieron obtener los tipos de plantas',
+    });
+  }
+});
+
 // Agregar planta
 router.post('/agregar', authenticateToken, async (req, res) => {
   try {
     const { nombre, tipo, idAmbiente } = req.body;
     const idUsuario = req.user.ID;
     const result = await plantaService.agregarPlanta({ nombre, tipo, idAmbiente: Number(idAmbiente), idUsuario });
-    const mensaje = result.message || 'Planta creada con éxito';
-    return res.status(result.status).json({ mensaje });
+    if (result.error) {
+      return res.status(result.status).json({ success: false, message: result.message });
+    }
+    return res.status(result.status).json({ success: true, message: 'Planta creada con éxito', data: result.data });
 
   }catch (error) {
     const statusCode = error.statusCode || StatusCodes.INTERNAL_SERVER_ERROR; 
         res.status(statusCode).json({
             success: false,
-            message: error.message,
-            token: ''
+            message: statusCode >= 500 ? 'Error interno del servidor' : error.message,
         });
   }});
 

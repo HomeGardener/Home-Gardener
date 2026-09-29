@@ -1,21 +1,24 @@
-cosas a mejorar con búsqueda de Especies: 
-- Cargar imagenes de la sección images y la de species (campo image_url) a la bd (con buckets). 
-- Completar la info subiendo data contenida en flower, foliage y fruit_or_seed
-- Función traducirNombre (en espcies) --> generalizar la de enfermedades
+# Actualizador de catálogos
 
-# React + Vite
+Herramienta de línea de comandos para sincronizar catálogos en Supabase o PostgreSQL. No es una aplicación Vite.
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+## Instalación
 
-Currently, two official plugins are available:
+```sh
+npm install
+```
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) (or [oxc](https://oxc.rs) when used in [rolldown-vite](https://vite.dev/guide/rolldown)) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+Crea `update-bd/.env` con las variables necesarias. Para especies: `SUPABASE_URL`, `SUPABASE_KEY`, `TREFLE_TOKEN`, configuración de Ollama y `OLLAMA_MODEL` opcional. Para enfermedades: `DB_HOST`, `DB_PORT`, `DB_USER`, `DB_PASSWORD` (o `DB_password` legado), `DB_NAME` y `PERENUAL_KEY`. También admite `DB_URL`.
 
-## React Compiler
+Mantén las claves API y la clave privada de Supabase fuera del repositorio. Ollama debe estar ejecutándose y tener descargado el modelo elegido antes de sincronizar especies.
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+## Comandos
 
-## Expanding the ESLint configuration
+```sh
+npm start -- especies
+npm start -- enfermedades
+```
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+También hay scripts directos: `npm run especies` y `npm run enfermedades`.
+
+La carga de especies consulta cada nombre y hace upsert por `TipoEspecifico.Nombre`; no elimina previamente el registro que puede estar referenciado por plantas. Los servicios externos pueden limitar peticiones y devolver catálogos incompletos; revisa el resumen de elementos actualizados y fallidos.

@@ -5,6 +5,11 @@ import DB_config from '../configs/db_configs.js';
 const pool = new Pool(DB_config);
 
 export default class plantaRepository {
+  async listarTipos() {
+    const result = await pool.query('SELECT "ID", "Nombre" FROM "TipoEspecifico" ORDER BY "Nombre" ASC');
+    return result.rows;
+  }
+
     async verificarTipo(tipo) {
     const query = `SELECT "Nombre" FROM "TipoEspecifico" WHERE "Nombre" = $1`;
     const result = await pool.query(query, [tipo]);
@@ -65,10 +70,15 @@ export default class plantaRepository {
 
   async listarPlantas(idUsuario)  {
     const query = `
-      SELECT "P"."ID", "P"."Nombre", "P"."Tipo", "P"."Foto", "A"."Nombre" AS "Ambiente"
+      SELECT "P"."ID", "P"."Nombre", "P"."Tipo", "P"."Foto", "A"."Nombre" AS "Ambiente",
+             "M"."ID" AS "IdModulo"
       FROM "Planta" AS "P"
       INNER JOIN "Ambiente" AS "A" ON "P"."IdAmbiente" = "A"."ID"
+      LEFT JOIN LATERAL (
+        SELECT "ID" FROM "Modulo" WHERE "IdPlanta" = "P"."ID" ORDER BY "ID" LIMIT 1
+      ) AS "M" ON TRUE
       WHERE "A"."IdUsuario" = $1
+      ORDER BY "P"."Nombre" ASC
     `;
     const result = await pool.query(query, [idUsuario]);
     return result.rows;

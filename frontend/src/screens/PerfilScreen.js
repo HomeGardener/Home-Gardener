@@ -1,18 +1,18 @@
-import React, { useEffect, useState, useMemo } from "react";
+import React, { useState } from "react";
 import { View, StyleSheet, Text, Image, TouchableOpacity } from "react-native";
-import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useFocusEffect } from '@react-navigation/native';
 import { useAuth } from "../contexts/AuthContext";
 import { getApiBaseUrl } from "../services/api";
+import { getAuthToken } from '../services/authStorage';
 import LogoutButton from "../components/LogoutButton";
  
-export default function PerfilScreen({ navigation, baseUrl = process.env.EXPO_PUBLIC_API_URL }) {
+export default function PerfilScreen({ navigation, baseUrl = getApiBaseUrl() }) {
   const { user, updateUser } = useAuth();
   const [loading, setLoading] = useState(!user);
 
   const fetchProfile = React.useCallback(async () => {
     try {
-      const token = await AsyncStorage.getItem('token');
+      const token = await getAuthToken();
       if (!token) {
         setLoading(false);
         return;
@@ -34,12 +34,6 @@ export default function PerfilScreen({ navigation, baseUrl = process.env.EXPO_PU
       setLoading(false);
     }
   }, [baseUrl, updateUser]);
-
-  useEffect(() => {
-    if (!user) {
-      fetchProfile();
-    }
-  }, [user, fetchProfile]);
 
   useFocusEffect(
     React.useCallback(() => {
@@ -65,7 +59,7 @@ export default function PerfilScreen({ navigation, baseUrl = process.env.EXPO_PU
 
   // Construir la URL de la foto
   const imageUrl = user.Foto
-    ? `${baseUrl.replace(/\/$/, "")}/backend/uploads/${user.Foto}`
+    ? user.Foto
     : "https://cdn-icons-png.flaticon.com/512/149/149071.png";
 
 

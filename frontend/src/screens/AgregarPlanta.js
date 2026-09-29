@@ -11,9 +11,10 @@ import {
   Platform,
 } from 'react-native';
 import { Picker } from '@react-native-picker/picker';
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import { getAuthToken } from '../services/authStorage';
+import { getApiBaseUrl } from '../services/api';
 
-export default function AgregarPlanta({ navigation, baseUrl = process.env.EXPO_PUBLIC_API_URL }) {
+export default function AgregarPlanta({ navigation, baseUrl = getApiBaseUrl() }) {
   const [nombre, setNombre] = useState('');
   const [tipo, setTipo] = useState('');
   const [idAmbiente, setIdAmbiente] = useState('');
@@ -24,7 +25,7 @@ export default function AgregarPlanta({ navigation, baseUrl = process.env.EXPO_P
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const token = await AsyncStorage.getItem('token');
+        const token = await getAuthToken();
         if (!token) {
           Alert.alert('Error', 'No se encontró el token de usuario');
           setLoading(false);
@@ -62,7 +63,7 @@ export default function AgregarPlanta({ navigation, baseUrl = process.env.EXPO_P
     }
 
     try {
-      const token = await AsyncStorage.getItem('token');
+      const token = await getAuthToken();
       if (!token) {
         Alert.alert('Error', 'No se encontró el token de usuario');
         return;

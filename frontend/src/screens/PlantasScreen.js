@@ -1,16 +1,17 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useCallback } from 'react';
 import { View, Text, FlatList, StyleSheet, Image, TouchableOpacity, Alert, ActivityIndicator } from 'react-native';
 import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import { getAuthToken } from '../services/authStorage';
+import { getApiBaseUrl } from '../services/api';
 import { useFocusEffect } from '@react-navigation/native';
 
-export default function PlantasScreen({ navigation, baseUrl = process.env.EXPO_PUBLIC_API_URL }) {
+export default function PlantasScreen({ navigation, baseUrl = getApiBaseUrl() }) {
   const [plantas, setPlantas] = useState([]);
   const [loading, setLoading] = useState(true);
   const [ambientesCount, setAmbientesCount] = useState(0); // 👈 cantidad de ambientes del usuario
 
   const getToken = async () => {
-    const token = await AsyncStorage.getItem('token');
+    const token = await getAuthToken();
     if (!token) throw new Error('No se encontró el token de usuario');
     return token;
   };
@@ -65,8 +66,6 @@ export default function PlantasScreen({ navigation, baseUrl = process.env.EXPO_P
       setLoading(false);
     }
   };
-
-  useEffect(() => { load(); }, []);
 
   useFocusEffect(
     useCallback(() => {

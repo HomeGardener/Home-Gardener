@@ -6,7 +6,7 @@ const pool = new Pool(DB_config);
 export default class UserRepository {
     async findByEmail (email)  {
     const result = await pool.query(
-      'SELECT "ID", "Nombre", "Email", "Password", "Direccion" FROM "Usuario" WHERE "Email" = $1',
+      'SELECT "ID", "Nombre", "Email", "Password", "Direccion", "Foto" FROM "Usuario" WHERE "Email" = $1',
       [email]
     );
     return result.rows[0];
@@ -40,15 +40,29 @@ export default class UserRepository {
   }  
 
   async update (id, fields){
-    const keys = Object.keys(fields);
-    if (keys.length === 0) return null;
+    const allowedColumns = new Map([
+      ['Nombre', '"Nombre"'],
+      ['Email', '"Email"'],
+      ['Password', '"Password"'],
+      ['Direccion', '"Direccion"'],
+      ['Foto', '"Foto"'],
+    ]);
+    const entries = Object.entries(fields);
+    if (entries.length === 0) return null;
+    if (entries.some(([key]) => !allowedColumns.has(key))) {
+      throw new Error('Campo de usuario no permitido');
+    }
 
-    const setQuery = keys.map((key, i) => `"${key}" = $${i + 1}`).join(', ');
-    const values = [...Object.values(fields), id];
+    const setQuery = entries.map(([key], i) => `${allowedColumns.get(key)} = $${i + 1}`).join(', ');
+    const values = [...entries.map(([, value]) => value), id];
 
-    const query = `UPDATE "Usuario" SET ${setQuery} WHERE "ID" = $${keys.length + 1} RETURNING "ID", "Nombre", "Email", "Direccion", "Foto"`;
+    const query = `UPDATE "Usuario" SET ${setQuery} WHERE "ID" = $${entries.length + 1} RETURNING "ID", "Nombre", "Email", "Direccion", "Foto"`;
     const result = await pool.query(query, values);
     return result.rows[0];
+  }
+
+  async deleteById(id) {
+    await pool.query('DELETE FROM "Usuario" WHERE "ID" = $1', [id]);
   }
 };
 

@@ -13,22 +13,31 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-
-const STORAGE_KEY = 'chat_messages_v1';
+import { useAuth } from '../contexts/AuthContext';
+import { getChatHistoryKey } from '../services/chatStorage';
 
 // Mensaje inicial del bot
 const initialBotMsg = {
   id: 1,
-  text: '¡Buen día! ¿En qué te puedo ayudar?',
+  text: 'Asistente demostrativo: puedo mostrar consejos generales predefinidos de jardinería.',
   sender: 'bot',
   timestamp: new Date(),
 };
 
-export default function ChatbotScreen({ navigation }) {
+export default function ChatbotScreen({ navigation, route }) {
+  const { user } = useAuth();
+  const storageKey = getChatHistoryKey(user?.ID || user?.id);
+  const requestedChatId = route?.params?.chatId || null;
+  const routeChatKey = route?.params?.newChatId || requestedChatId;
+  const [loadedConversation, setLoadedConversation] = useState(null);
+  const [activeChatId, setActiveChatId] = useState(String(requestedChatId || Date.now()));
   const [messages, setMessages] = useState([initialBotMsg]);
   const [inputText, setInputText] = useState('');
   const [restoring, setRestoring] = useState(true);
   const scrollViewRef = useRef();
+  const historyRef = useRef([]);
+  const createdAtRef = useRef(new Date().toISOString());
+  const conversationIdentity = `${storageKey}:${routeChatKey || 'new'}`;
 
   const botResponses = [
     'Para cuidar tus plantas, asegúrate de regarlas regularmente pero sin exceso.',
@@ -39,29 +48,63 @@ export default function ChatbotScreen({ navigation }) {
     '¿Podrías contarme más sobre el problema específico de tu planta?'
   ];
 
-  // --- Cargar historial de mensajes
+  // Load this user's chat history and restore the selected conversation.
   useEffect(() => {
+    let active = true;
+    setRestoring(true);
+    setLoadedConversation(null);
+    setMessages([{ ...initialBotMsg, id: Date.now(), timestamp: new Date() }]);
     (async () => {
       try {
-        const raw = await AsyncStorage.getItem(STORAGE_KEY);
-        if (raw) {
-          const parsed = JSON.parse(raw);
-          const hydrated = parsed.map(m => ({ ...m, timestamp: new Date(m.timestamp) }));
-          setMessages(hydrated.length ? hydrated : [initialBotMsg]);
+        const raw = await AsyncStorage.getItem(storageKey);
+        const parsed = raw ? JSON.parse(raw) : [];
+        const history = Array.isArray(parsed) ? parsed : [];
+        if (!active) return;
+        historyRef.current = history;
+
+        if (requestedChatId) {
+          const chat = history.find((item) => String(item.id) === String(requestedChatId));
+          const savedMessages = chat?.messages || route?.params?.chatMessages;
+          setActiveChatId(String(requestedChatId));
+          createdAtRef.current = chat?.createdAt || new Date().toISOString();
+          if (Array.isArray(savedMessages)) {
+            setMessages(savedMessages.map((message) => ({ ...message, timestamp: new Date(message.timestamp) })));
+          } else {
+            setMessages([{ ...initialBotMsg, id: Date.now(), timestamp: new Date() }]);
+          }
+        } else {
+          setActiveChatId(String(Date.now()));
+          createdAtRef.current = new Date().toISOString();
+          setMessages([{ ...initialBotMsg, id: Date.now(), timestamp: new Date() }]);
         }
+        setLoadedConversation(conversationIdentity);
       } catch (e) {
-        setMessages([initialBotMsg]); // Fallback si no se puede recuperar el historial
+        if (active) {
+          historyRef.current = [];
+          setMessages([{ ...initialBotMsg, id: Date.now(), timestamp: new Date() }]);
+          setLoadedConversation(conversationIdentity);
+        }
       } finally {
-        setRestoring(false);
+        if (active) setRestoring(false);
       }
     })();
-  }, []);
+    return () => { active = false; };
+  }, [routeChatKey, requestedChatId, storageKey, conversationIdentity, route?.params?.chatMessages]);
 
-  // --- Guardar historial de mensajes cada vez que cambian
+  // Persist conversations as separate per-user entries for the history screen.
   useEffect(() => {
-    if (restoring) return; // No sobreescribir mientras estamos restaurando
-    AsyncStorage.setItem(STORAGE_KEY, JSON.stringify([{ id: Date.now(), messages }])).catch(() => {});
-  }, [messages, restoring]);
+    if (restoring || loadedConversation !== conversationIdentity) return;
+    const existing = historyRef.current.find((chat) => String(chat.id) === activeChatId);
+    const currentChat = {
+      id: activeChatId,
+      createdAt: existing?.createdAt || createdAtRef.current,
+      messages,
+    };
+    historyRef.current = [currentChat, ...historyRef.current.filter((chat) => String(chat.id) !== activeChatId)];
+    AsyncStorage.setItem(storageKey, JSON.stringify(historyRef.current)).catch((error) => {
+      console.error('No se pudo guardar el historial del chat:', error.message);
+    });
+  }, [activeChatId, conversationIdentity, loadedConversation, messages, restoring, storageKey]);
 
   // --- Scroll hacia abajo cada vez que se agregan mensajes
   useEffect(() => {
@@ -97,7 +140,6 @@ export default function ChatbotScreen({ navigation }) {
   };
 
   const handleClearHistory = async () => {
-    await AsyncStorage.removeItem(STORAGE_KEY).catch(() => {});
     setMessages([ { ...initialBotMsg, id: Date.now() } ]);
   };
 
@@ -111,7 +153,7 @@ export default function ChatbotScreen({ navigation }) {
         <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
           <Ionicons name="arrow-back" size={22} color="#15A266" />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>Asistente de Jardinería</Text>
+        <Text style={styles.headerTitle}>Consejos de jardinería (demo)</Text>
         <TouchableOpacity onPress={handleClearHistory} style={styles.clearBtn}>
           <Ionicons name="trash-outline" size={20} color="#D32F2F" />
         </TouchableOpacity>

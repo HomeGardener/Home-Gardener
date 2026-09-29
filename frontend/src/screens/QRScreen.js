@@ -98,15 +98,8 @@ export default function QRScreen({ navigation }) {
 
     Alert.alert(
       'Análisis de Planta',
-      'La imagen ha sido procesada. En una implementación real, aquí se mostrarían los resultados del análisis de la planta.',
-      [
-        {
-          text: 'OK',
-          onPress: () => {
-            console.log('Análisis completado para:', selectedImage.uri);
-          }
-        }
-      ]
+        'La vista previa está lista. El análisis automático de imágenes todavía no está conectado.',
+        [{ text: 'OK' }]
     );
   };
 
@@ -124,7 +117,7 @@ export default function QRScreen({ navigation }) {
         >
           <Ionicons name="arrow-back" size={24} color="#000" />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>Análisis de Plantas</Text>
+        <Text style={styles.headerTitle}>Fotos de plantas</Text>
         <View style={styles.headerSpacer} />
       </View>
 
@@ -132,9 +125,9 @@ export default function QRScreen({ navigation }) {
         {/* Instrucciones */}
         <View style={styles.instructionsContainer}>
           <Ionicons name="camera-outline" size={48} color="#15A266" />
-          <Text style={styles.instructionsTitle}>Analiza tu planta</Text>
+            <Text style={styles.instructionsTitle}>Vista previa de una planta</Text>
           <Text style={styles.instructionsText}>
-            Toma una foto o selecciona una imagen de tu planta para obtener información detallada sobre su estado de salud, tipo de planta y recomendaciones de cuidado.
+            Toma una foto o selecciona una imagen para verla en esta pantalla.
           </Text>
         </View>
 

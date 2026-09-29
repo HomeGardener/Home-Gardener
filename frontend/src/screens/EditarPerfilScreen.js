@@ -1,22 +1,22 @@
 import React, { useEffect, useState } from 'react';
 import { View, TextInput, Text, StyleSheet, Alert, ActivityIndicator, Image, TouchableOpacity } from 'react-native';
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as ImagePicker from 'expo-image-picker';
 import { Ionicons } from '@expo/vector-icons';
 import { useAuth } from '../contexts/AuthContext';
 import { getApiBaseUrl } from '../services/api';
+import { getAuthToken } from '../services/authStorage';
 
 const GREEN = '#15A266';
 const LIGHT_BG = '#EAF8EE';
 
-export default function EditarPerfilScreen({ navigation, api, user, baseUrl }) {
+export default function EditarPerfilScreen({ navigation, user, baseUrl = getApiBaseUrl() }) {
   const [nombre, setNombre] = useState('');
   const [email, setEmail] = useState('');
   const [direccion, setDireccion] = useState('');
   const [error, setError] = useState(null);
   const [loading, setLoading] = useState(true);
   const [updating, setUpdating] = useState(false);
-  const [foto, setFoto] = useState(null); // UI opcional, backend no la recibe aún
+  const [foto, setFoto] = useState(null);
   const [original, setOriginal] = useState(null);
   const { updateUser, user: authUser } = useAuth();
 
@@ -34,7 +34,7 @@ export default function EditarPerfilScreen({ navigation, api, user, baseUrl }) {
           return;
         }
 
-        const token = await AsyncStorage.getItem('token');
+        const token = await getAuthToken();
         if (!token) {
           setLoading(false);
           setError('No hay sesión activa');
@@ -66,14 +66,14 @@ export default function EditarPerfilScreen({ navigation, api, user, baseUrl }) {
   }, [authUser, user, baseUrl]);
 
   const pickImage = async () => {
-    let result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ImagePicker.MediaType.Images,
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ['images'],
       allowsEditing: true,
       aspect: [1, 1],
       quality: 0.5,
     });
     if (!result.canceled) {
-      setFoto(result.assets[0].uri);
+      setFoto(result.assets[0]);
     }
   };
 
@@ -105,39 +105,37 @@ export default function EditarPerfilScreen({ navigation, api, user, baseUrl }) {
       changes.direccion = trimmedDireccion;
     }
 
-    if (Object.keys(changes).length === 0) {
+    if (Object.keys(changes).length === 0 && !foto) {
       Alert.alert('Sin cambios', 'No hay cambios para guardar');
       return;
     }
 
     try {
       setUpdating(true);
-      const token = await AsyncStorage.getItem('token');
+      const token = await getAuthToken();
       const apiBase = baseUrl || getApiBaseUrl();
+      const body = foto ? new FormData() : JSON.stringify(changes);
+      if (foto) {
+        Object.entries(changes).forEach(([key, value]) => body.append(key, value));
+        body.append('Foto', {
+          uri: foto.uri,
+          name: foto.fileName || 'perfil.jpg',
+          type: foto.mimeType || 'image/jpeg',
+        });
+      }
       const res = await fetch(`${apiBase}/api/auth/profile`, {
         method: 'PUT',
         headers: {
           'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json',
+          ...(foto ? {} : { 'Content-Type': 'application/json' }),
         },
-        body: JSON.stringify(changes),
+        body,
       });
 
       const data = await res.json().catch(() => ({}));
 
       if (res.ok) {
-        try {
-          const refreshRes = await fetch(`${apiBase}/api/auth/profile`, {
-            method: 'GET',
-            headers: { 'Authorization': `Bearer ${token}` },
-          });
-          if (refreshRes.ok) {
-            const refreshed = await refreshRes.json();
-            if (refreshed?.user) {
-              await updateUser(refreshed.user);
-            }
-          }
-        } catch {}
+        if (data?.user) await updateUser(data.user);
 
         Alert.alert('Éxito', 'Tus datos fueron actualizados correctamente');
         navigation.goBack();
@@ -167,13 +165,13 @@ export default function EditarPerfilScreen({ navigation, api, user, baseUrl }) {
 
       <TouchableOpacity onPress={pickImage} style={styles.avatarContainer}>
         {foto ? (
-          <Image source={{ uri: foto }} style={styles.avatar} />
+          <Image source={{ uri: foto.uri }} style={styles.avatar} />
         ) : (
           <View style={[styles.avatar, styles.avatarPlaceholder]}>
             <Ionicons name="camera" size={32} color="#555" />
           </View>
         )}
-        <Text style={styles.avatarText}>Cambiar foto (no se envía aún)</Text>
+        <Text style={styles.avatarText}>Cambiar foto</Text>
       </TouchableOpacity>
 
       <TextInput
