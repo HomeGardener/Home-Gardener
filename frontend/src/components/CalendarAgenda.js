@@ -110,8 +110,14 @@ const onSaveEvent = (payload) => {
     (async () => {
       try {
         const raw = await AsyncStorage.getItem(STORAGE_KEY(userId));
-        const parsed = raw ? JSON.parse(raw) : [];
-        if (active && Array.isArray(parsed)) {
+        let parsed = [];
+        try {
+          const value = raw ? JSON.parse(raw) : [];
+          parsed = Array.isArray(value) ? value : [];
+        } catch (e) {
+          console.warn("El caché de eventos no es válido; se iniciará vacío:", e?.message);
+        }
+        if (active) {
           setEvents(parsed);
           setLoadedForUser(userId);
         }
