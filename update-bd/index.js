@@ -15,17 +15,19 @@ async function main() {
   }
 
   switch (action) {
-    case "especies":
+    case "especies": {
       console.log("🌱 Ejecutando carga de especies...");
       const speciesLoader = new HuertaSpeciesLoader();
       await speciesLoader.run();
       break;
+    }
 
-    case "enfermedades":
+    case "enfermedades": {
       console.log("🧫 Ejecutando carga de enfermedades...");
       const enfermedadesLoader = new EnfermedadesLoader();
       await enfermedadesLoader.run();
       break;
+    }
 
     default:
       console.log(`❌ Acción desconocida: ${action}`);
