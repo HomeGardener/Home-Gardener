@@ -7,7 +7,14 @@ const imageUpload = multer({
     if (allowedImageTypes.has(file.mimetype)) return callback(null, true);
     callback(new Error('Formato de imagen no permitido'));
   },
-  limits: { fileSize: 5 * 1024 * 1024, files: 1 },
+  limits: {
+    fileSize: 5 * 1024 * 1024,
+    files: 1,
+    fields: 10,
+    fieldSize: 16 * 1024,
+    parts: 11,
+    headerPairs: 100,
+  },
 });
 
 function matchesImageSignature(file) {
@@ -22,10 +29,16 @@ export const uploadFile = (fieldName) => {
   return (req, res, next) => {
     imageUpload.single(fieldName)(req, res, (error) => {
       if (error) {
-        const tooLarge = error instanceof multer.MulterError && error.code === 'LIMIT_FILE_SIZE';
+        let message = 'La imagen debe ser JPG, PNG o WebP';
+        if (error instanceof multer.MulterError) {
+          if (error.code === 'LIMIT_FILE_SIZE') message = 'La imagen no puede superar los 5 MB';
+          else if (['LIMIT_FIELD_COUNT', 'LIMIT_FIELD_VALUE', 'LIMIT_PART_COUNT'].includes(error.code)) {
+            message = 'La solicitud incluye demasiados campos o datos';
+          }
+        }
         return res.status(400).json({
           success: false,
-          message: tooLarge ? 'La imagen no puede superar los 5 MB' : 'La imagen debe ser JPG, PNG o WebP',
+          message,
         });
       }
       if (req.file && !matchesImageSignature(req.file)) {
