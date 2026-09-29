@@ -1,6 +1,8 @@
 
 import { Pool } from 'pg';
 import DB_config from '../configs/db_configs.js';
+import AppError from '../utils/AppError.js';
+import { StatusCodes } from 'http-status-codes';
 
 const pool = new Pool(DB_config);
 
@@ -36,10 +38,46 @@ export default class sensoresRepository {
     return result.rows[0] || null;
   }
   
-  async conectarModulo(idModulo, idPlanta) {
-    const query = 'UPDATE "Modulo" SET "IdPlanta" = $2 WHERE "ID" = $1 RETURNING "ID"';
-    const result = await pool.query(query, [idModulo, idPlanta]);
-    return result.rows[0];
+  async conectarModulo(idModulo, idPlanta, idUsuario) {
+    const client = await pool.connect();
+    try {
+      await client.query('BEGIN');
+      const plant = await client.query(`
+        SELECT p."ID"
+        FROM "Planta" AS p
+        JOIN "Ambiente" AS a ON a."ID" = p."IdAmbiente"
+        WHERE p."ID" = $1 AND a."IdUsuario" = $2
+        FOR UPDATE OF p
+      `, [idPlanta, idUsuario]);
+      if (plant.rowCount === 0) {
+        throw new AppError('Planta no encontrada o sin permiso', StatusCodes.FORBIDDEN);
+      }
+
+      const module = await client.query('SELECT "ID", "IdPlanta" FROM "Modulo" WHERE "ID" = $1 FOR UPDATE', [idModulo]);
+      if (module.rowCount === 0) {
+        throw new AppError('No se encuentra el módulo', StatusCodes.NOT_FOUND);
+      }
+      if (module.rows[0].IdPlanta !== null) {
+        throw new AppError('Este módulo ya tiene una planta conectada', StatusCodes.CONFLICT);
+      }
+
+      const currentPlantModule = await client.query('SELECT "ID" FROM "Modulo" WHERE "IdPlanta" = $1 LIMIT 1 FOR UPDATE', [idPlanta]);
+      if (currentPlantModule.rowCount > 0) {
+        throw new AppError('La planta ya tiene un módulo conectado', StatusCodes.CONFLICT);
+      }
+
+      const result = await client.query(
+        'UPDATE "Modulo" SET "IdPlanta" = $2 WHERE "ID" = $1 RETURNING "ID"',
+        [idModulo, idPlanta]
+      );
+      await client.query('COMMIT');
+      return result.rows[0];
+    } catch (error) {
+      await client.query('ROLLBACK').catch(() => {});
+      throw error;
+    } finally {
+      client.release();
+    }
   }
 
   async obtenerModulosDePlanta(idPlanta) {
@@ -89,10 +127,4 @@ export default class sensoresRepository {
     return result.rows[0];
   }
 
-  async verificarModuloLibre(idModulo){
-    const query = `
-      SELECT "IdPlanta" FROM "Modulo" WHERE "ID" = $1 `;
-    const result = await pool.query(query, [idModulo]);
-    return result.rows[0];
-  }
 };

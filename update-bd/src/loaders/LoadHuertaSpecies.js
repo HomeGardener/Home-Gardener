@@ -1,26 +1,21 @@
 
+import "dotenv/config";
 import { createClient } from "@supabase/supabase-js";
-import https from "https";
 import { Ollama } from "@llamaindex/ollama";
-import dotenv from "dotenv";
-import { uploadImageToSupabase } from "../utils/uploadImageToSupabase.js";
-import fetch from "node-fetch";
-
-
-  const ollamaLLM = new Ollama({
+const ollamaLLM = new Ollama({
   model: process.env.OLLAMA_MODEL || "mistral:7b",
-  temperature: 0.25, // determinista para diagnóstico
+  temperature: 0.25,
   timeout: 60000,
 });
-
-dotenv.config();
 
 
 
 export class HuertaSpeciesLoader {
   constructor() { 
-    this.supabase = createClient( process.env.SUPABASE_URL, process.env.SUPABASE_KEY);
-    this.agent = new https.Agent({ rejectUnauthorized: false });    
+    if (!process.env.SUPABASE_URL || !process.env.SUPABASE_KEY) {
+      throw new Error('SUPABASE_URL y SUPABASE_KEY son obligatorios para cargar especies');
+    }
+    this.supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_KEY);
   }
 
   async obtenerEspeciesDesdeBD() {
@@ -30,8 +25,7 @@ export class HuertaSpeciesLoader {
       .select("Nombre");
 
     if (error) {
-      console.error("❌ Error al consultar especies:", error.message);
-      return [];
+      throw new Error(`Error al consultar especies: ${error.message}`);
     }
 
     const nombres = data.map((e) => e.Nombre).filter(Boolean);
@@ -42,31 +36,23 @@ export class HuertaSpeciesLoader {
   async obtenerDatosPlanta(nombre) {
     console.log(`Obteniendo datos para la planta: ${nombre}`);
     try {
+      if (!process.env.TREFLE_TOKEN) throw new Error('TREFLE_TOKEN no está configurado');
       const nombreTraducido = await this.traducirNombre(nombre, "inglés");
-      console.log(`${nombre} nombreTraducido: `+nombreTraducido);
-      //Para obtener datos de foliage, fuit_or_seed, flower y growth hay que tener el id de la planta --> primero obtener id y luego buscar por especie
-      
-      // 1. Buscar la planta
-        const resBusqueda = await fetch(`https://trefle.io/api/v1/plants/search?token=${process.env.TREFLE_TOKEN}&q=${nombreTraducido}`);
-        const jsonBusqueda = await resBusqueda.json();
+      const searchUrl = new URL('https://trefle.io/api/v1/plants/search');
+      searchUrl.searchParams.set('token', process.env.TREFLE_TOKEN);
+      searchUrl.searchParams.set('q', nombreTraducido || nombre);
+      const resBusqueda = await fetch(searchUrl, { signal: AbortSignal.timeout(15000) });
+      if (!resBusqueda.ok) throw new Error(`Trefle devolvió HTTP ${resBusqueda.status}`);
+      const jsonBusqueda = await resBusqueda.json();
+      const plantaEncontrada = jsonBusqueda.data?.[0];
+      if (!plantaEncontrada?.id) throw new Error(`No se encontró la planta "${nombreTraducido}" en Trefle`);
 
-    //console.log("Resultado de búsqueda:", JSON.stringify(jsonBusqueda, null, 2));
-
-      // 2. Validar si encontró algo
-        if (!jsonBusqueda.data || jsonBusqueda.data.length === 0) {
-          throw new Error(`No se encontró la planta "${nombreTraducido}" en Trefle`);
-        }
-
-        const plantaEncontrada = jsonBusqueda.data[0]; // tomo la primera coincidencia
-       // console.log("Planta encontrada:", plantaEncontrada);
-
-      // 3. Consultar especie por id
-        const resDetalle = await fetch(`https://trefle.io/api/v1/species/${plantaEncontrada.id}?token=${process.env.TREFLE_TOKEN}` );
-
-        const jsonDetalle = await resDetalle.json();
-
-        //console.log("Detalle:", JSON.stringify(jsonDetalle, null, 2));
-        console.log(`✅ Detalle para ${nombre} obtenido`);
+      const detailUrl = new URL(`https://trefle.io/api/v1/species/${plantaEncontrada.id}`);
+      detailUrl.searchParams.set('token', process.env.TREFLE_TOKEN);
+      const resDetalle = await fetch(detailUrl, { signal: AbortSignal.timeout(15000) });
+      if (!resDetalle.ok) throw new Error(`Trefle devolvió HTTP ${resDetalle.status}`);
+      const jsonDetalle = await resDetalle.json();
+      console.log(`Detalle para ${nombre} obtenido`);
       return jsonDetalle;
 
 
@@ -121,7 +107,7 @@ async seleccionarDatosYArmar(apiResponse) {
 
   const growth = info.growth ?? {};
 
-  // Helpers para deg_c, mm, cm
+  // Helpers para convertir las unidades opcionales devueltas por Trefle.
   const celsius = (obj) => obj?.deg_c ?? null;
   const milimetros = (obj) => obj?.mm ?? null;
   const centimetros = (obj) => obj?.cm ?? null;
@@ -141,7 +127,7 @@ async seleccionarDatosYArmar(apiResponse) {
   `.trim();
   console.log("contenidoGuia: "+contenidoGuia);
 
-  const nombreTraducido = await this.traducirNombre(info.common_name);
+  const nombreTraducido = await this.traducirNombre(info.common_name || info.scientific_name);
   console.log(`nombreTraducido en seleccionarDatosYArmar para ${info.common_name} (common_name provisto a spanish): `+nombreTraducido);
 
   return {
@@ -158,25 +144,9 @@ async seleccionarDatosYArmar(apiResponse) {
   };
 }
 
-  async eliminarRegistroExistente(nombreBD) {
-        const response = await this.supabase
-      .from("TipoEspecifico")
-      .delete()
-      .eq("Nombre", nombreBD)
-        if (response.error) {
-          console.error(`❌ Error al eliminar registro existente de ${nombreBD}: ${response.error.message}`);
-        }
-  }
-
   async insertarEnSupabase(datos, nombreBD) {
-    console.log(">>> Datos a insertar:", datos);
-    console.log(">>> Insertando registro con Nombre=", JSON.stringify(nombreBD.toLowerCase()));
-
-
-    await this.eliminarRegistroExistente(nombreBD);
-
     const insertObject = {
-      Nombre: nombreBD.toLowerCase(),
+      Nombre: nombreBD.trim(),
       Info: datos.contenidoGuia ?? null,
       TempMinIdeal: datos.tempMin ?? null,
       TempMaxIdeal: datos.tempMax ?? null,
@@ -187,42 +157,38 @@ async seleccionarDatosYArmar(apiResponse) {
 
     const { data, error } = await this.supabase
       .from("TipoEspecifico")
-      .insert(insertObject)
-      .eq("Nombre", nombreBD)
+      .upsert(insertObject, { onConflict: 'Nombre' })
       .select("ID")
-      .maybeSingle();
+      .single();
 
     if (error) {
-      console.error(`❌ Error al insertar ${nombreBD} TipoEspecifico: ${error.message}`);
-      return;
+      throw new Error(`Error guardando ${nombreBD}: ${error.message}`);
     }
-          console.log("Datos actualizados en Supabase para "+nombreBD);
-
+    return data;
   }
 
   async run() {
-   console.log("🌿 Cargando especies de huerta...");
+    console.log("Cargando especies de huerta...");
     const especies = await this.obtenerEspeciesDesdeBD();
-    if(especies){
-      console.log("Entra al if");
-      especies.forEach(async (nombre) => {
-        console.log("Especie ahora: "+nombre);
-
-        const datosCompletosPlanta = await this.obtenerDatosPlanta(nombre);
-        if(datosCompletosPlanta){
-          const datosSeleccionadosPlanta = await this.seleccionarDatosYArmar(datosCompletosPlanta);
-          console.log("Datos seleccionados para "+nombre+": ", datosSeleccionadosPlanta);
-          if (datosSeleccionadosPlanta) await this.insertarEnSupabase(datosSeleccionadosPlanta, nombre);
-
-        }else{
-          console.log(`❌ No se obtuvieron datos para la planta: ${nombre}`);
+    let updated = 0;
+    let failed = 0;
+    for (const nombre of especies) {
+      try {
+        const data = await this.obtenerDatosPlanta(nombre);
+        if (!data) {
+          failed += 1;
+          continue;
         }
-    //  });
-    //}
-
-  
-    console.log("✅ Carga completa.");
-  });
+        const selected = await this.seleccionarDatosYArmar(data);
+        await this.insertarEnSupabase(selected, nombre);
+        updated += 1;
+      } catch (error) {
+        failed += 1;
+        console.error(`No se pudo actualizar ${nombre}:`, error.message);
+      }
     }
+    const summary = { total: especies.length, updated, failed };
+    console.log(`Carga completa: ${updated}/${especies.length} especies actualizadas; ${failed} con errores.`);
+    return summary;
   }
 }

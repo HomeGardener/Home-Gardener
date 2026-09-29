@@ -6,6 +6,10 @@ const plantaRepo = new plantaRepository();
 const validator = new validaciones(); 
 
 export default class  plantaService {
+  async listarTipos() {
+    return plantaRepo.listarTipos();
+  }
+
   async agregarPlanta({ nombre, tipo, idAmbiente, idUsuario }) {
     if (!nombre || typeof nombre !== 'string' ||
         !tipo || typeof tipo !== 'string' ||
@@ -62,13 +66,10 @@ export default class  plantaService {
 
   async listarPlantas (idUsuario) {
     const plantas = await plantaRepo.listarPlantas(idUsuario);
-    if (plantas.length === 0) {
-      return { error: true, status: StatusCodes.NOT_FOUND, message: 'No tienes plantas asociadas' };
-    }
     return { error: false, status: StatusCodes.OK, data: plantas };
   }
 
-  async validarPropietario({idPlanta, idUsuario}){
+  async validarPropietario(idPlanta, idUsuario) {
     const esPropietario = await plantaRepo.validarPropietario(idPlanta, idUsuario);
     return esPropietario;
   }

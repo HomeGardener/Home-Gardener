@@ -7,10 +7,8 @@
   "scripts": {
     "start": "node index.js",
     "dev": "nodemon index.js",
-    "test": "echo \"Error: no test specified\" && exit 1",
-    "lint": "echo \"Linting no configurado\" && exit 0",
-    "clean": "rm -rf node_modules package-lock.json",
-    "reinstall": "npm run clean && npm install"
+    "test": "node --test",
+    "check": "node scripts/check-syntax.js"
   },
   "keywords": [
     "gardening",

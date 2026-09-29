@@ -1,7 +1,16 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { getAuthToken, setAuthToken, removeAuthToken } from '../services/authStorage';
 
 const AuthContext = createContext();
+
+const safeUser = (user) => user && ({
+  ID: user.ID,
+  Nombre: user.Nombre,
+  Email: user.Email,
+  Direccion: user.Direccion,
+  Foto: user.Foto ?? null,
+});
 
 export const useAuth = () => {
   const context = useContext(AuthContext);
@@ -23,16 +32,27 @@ export const AuthProvider = ({ children }) => {
 
   const checkAuthStatus = async () => {
     try {
-      const storedToken = await AsyncStorage.getItem('token');
+      const storedToken = await getAuthToken();
       const storedUser = await AsyncStorage.getItem('userData');
       
       if (storedToken && storedUser) {
+        const parsedUser = safeUser(JSON.parse(storedUser));
+        if (!parsedUser?.ID) throw new Error('Datos de usuario guardados inválidos');
+        await AsyncStorage.setItem('userData', JSON.stringify(parsedUser));
         setToken(storedToken);
-        setUser(JSON.parse(storedUser));
+        setUser(parsedUser);
         setIsAuthenticated(true);
+      } else {
+        await removeAuthToken();
+        await AsyncStorage.removeItem('userData');
       }
     } catch (error) {
       console.error('Error checking auth status:', error);
+      await removeAuthToken().catch(() => {});
+      await AsyncStorage.removeItem('userData').catch(() => {});
+      setToken(null);
+      setUser(null);
+      setIsAuthenticated(false);
     } finally {
       setLoading(false);
     }
@@ -40,11 +60,12 @@ export const AuthProvider = ({ children }) => {
 
   const login = async (userData, token) => {
     try {
-      await AsyncStorage.setItem('token', token);
-      await AsyncStorage.setItem('userData', JSON.stringify(userData));
+      const storedUser = safeUser(userData);
+      await setAuthToken(token);
+      await AsyncStorage.setItem('userData', JSON.stringify(storedUser));
       
       setToken(token);
-      setUser(userData);
+      setUser(storedUser);
       setIsAuthenticated(true);
       
       return true;
@@ -56,11 +77,12 @@ export const AuthProvider = ({ children }) => {
 
   const register = async (userData, token) => {
     try {
-      await AsyncStorage.setItem('token', token);
-      await AsyncStorage.setItem('userData', JSON.stringify(userData));
+      const storedUser = safeUser(userData);
+      await setAuthToken(token);
+      await AsyncStorage.setItem('userData', JSON.stringify(storedUser));
       
       setToken(token);
-      setUser(userData);
+      setUser(storedUser);
       setIsAuthenticated(true);
       
       return true;
@@ -72,7 +94,7 @@ export const AuthProvider = ({ children }) => {
 
   const logout = async () => {
     try {
-      await AsyncStorage.removeItem('token');
+      await removeAuthToken();
       await AsyncStorage.removeItem('userData');
       
       setToken(null);
@@ -88,8 +110,9 @@ export const AuthProvider = ({ children }) => {
 
   const updateUser = async (newUserData) => {
     try {
-      await AsyncStorage.setItem('userData', JSON.stringify(newUserData));
-      setUser(newUserData);
+      const storedUser = safeUser(newUserData);
+      await AsyncStorage.setItem('userData', JSON.stringify(storedUser));
+      setUser(storedUser);
       return true;
     } catch (error) {
       console.error('Error updating user:', error);

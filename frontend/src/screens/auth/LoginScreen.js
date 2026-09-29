@@ -13,11 +13,11 @@ import {
   Dimensions,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { createAPI } from '../../services/api';
+import { createAPI, getApiBaseUrl } from '../../services/api';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import { useAuth } from '../../contexts/AuthContext';
 
-export default function LoginScreen({ navigation, baseUrl = process.env.EXPO_PUBLIC_API_URL }) {
+export default function LoginScreen({ navigation, baseUrl = getApiBaseUrl() }) {
 
   const api = useMemo(() => createAPI(baseUrl), [baseUrl]);
   const { login } = useAuth();

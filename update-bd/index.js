@@ -1,5 +1,4 @@
-import dotenv from "dotenv";
-dotenv.config();
+import "dotenv/config";
 
 import { EnfermedadesLoader } from "./src/loaders/LoadEnfermedades.js";
 import { HuertaSpeciesLoader } from "./src/loaders/LoadHuertaSpecies.js";

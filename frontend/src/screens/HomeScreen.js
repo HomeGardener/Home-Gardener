@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React from 'react';
 import { 
   View, 
   Text, 
@@ -11,19 +11,7 @@ import {
 import { useAuth } from '../contexts/AuthContext';
 import CalendarAgenda from "../components/CalendarAgenda";
 
-const PLANTS = [
-  { id: 1, name: "Albahaca", note: "Fue regada a las 5:02", status: "ok" },
-  { id: 2, name: "Tomate", note: "No recibe la suficiente cantidad de luz", status: "warn" },
-  { id: 3, name: "Frutilla", note: "Recibe demasiada luz", status: "alert" },
-];
-
-const statusColor = {
-  ok: "#2ecc71",
-  warn: "#f1c40f",
-  alert: "#ff6b6b",
-};
-
-export default function HomeScreen({ navigation, baseUrl = process.env.EXPO_PUBLIC_API_URL  }) {
+export default function HomeScreen({ navigation }) {
   const { user, loading } = useAuth();
 
   if (loading) return <Text style={styles.loading}>Cargando...</Text>;
@@ -59,13 +47,13 @@ export default function HomeScreen({ navigation, baseUrl = process.env.EXPO_PUBL
       <View style={styles.greetingBox}>
         <Text style={styles.greetingText}>Bienvenido/a a Home</Text>
         <Text style={styles.greetingText}>Gardener</Text>
-        <Text style={styles.greetingName}>{user.nombre}</Text>
+        <Text style={styles.greetingName}>{user.Nombre || user.nombre || user.Email}</Text>
       </View>
 
       {/* Lista de plantas */}
       
       <View style={styles.card}>
-          <CalendarAgenda userId={user?.id_usuario || user?.id || "local"} />
+          <CalendarAgenda userId={user?.ID || user?.id_usuario || user?.id || 'anonymous'} />
       </View>
 
       {/* Botón para ChatBot */}

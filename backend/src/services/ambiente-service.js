@@ -6,12 +6,15 @@ const repo = new AmbienteRepository();
 const validator = new validaciones();
 
 export default class AmbienteService {
-  async agregar({ nombre, idUsuario }) {
-    if (!(await validator.isValidString(nombre)) || !idUsuario)
+  async agregar({ nombre, idUsuario, temperatura }) {
+    const cleanName = typeof nombre === 'string' ? nombre.trim() : '';
+    const roomTemperature = temperatura === undefined || temperatura === '' ? null : Number(temperatura);
+    if (!validator.isValidString(cleanName) || !idUsuario ||
+        (roomTemperature !== null && !validator.isValidTemperature(roomTemperature)))
       throw new AppError('Valores de campos inválidos', StatusCodes.BAD_REQUEST);
-    const ambiente = await repo.buscarAmbiente(nombre, idUsuario);
+    const ambiente = await repo.buscarAmbiente(cleanName, idUsuario);
     if(!ambiente){
-      const result = await repo.create(nombre.trim(), idUsuario);
+      const result = await repo.create(cleanName, idUsuario, roomTemperature);
       return result;
     }else{
       throw new AppError('Ya tenes un ambiente con este nombre', StatusCodes.BAD_REQUEST);
@@ -20,11 +23,7 @@ export default class AmbienteService {
   }
 
   async listar(idUsuario) {
-    const ambientes = await repo.getAllByUserId(idUsuario);
-    if (ambientes.length === 0)
-      throw new AppError('No se encontraron ambientes para este usuario', StatusCodes.NOT_FOUND);
-
-    return ambientes;
+    return repo.getAllByUserId(idUsuario);
   }
 
   async editar(id, { nombre, idUsuario }) {

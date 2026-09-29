@@ -1,8 +1,9 @@
 import React, { useState } from 'react';
 import { View, Text, StyleSheet, TextInput, TouchableOpacity, Alert } from 'react-native';
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import { getAuthToken } from '../services/authStorage';
+import { getApiBaseUrl } from '../services/api';
 
-export default function AgregarAmbiente({ navigation, baseUrl = process.env.EXPO_PUBLIC_API_URL  }) {
+export default function AgregarAmbiente({ navigation, baseUrl = getApiBaseUrl() }) {
     const [nombre, setNombre] = useState('');
     const [temperatura, setTemperatura] = useState('');
 
@@ -13,14 +14,11 @@ export default function AgregarAmbiente({ navigation, baseUrl = process.env.EXPO
         }
 
         try {
-            const token = await AsyncStorage.getItem('token');
+            const token = await getAuthToken();
             if (!token) {
                 Alert.alert('Error', 'No se encontró el token de usuario');
                 return;
             }
-
-            console.log('Token:', token);
-            console.log('Sending data:', { nombre, temperatura });
 
             const response = await fetch(`${baseUrl}/api/ambiente/agregar`, {
                 method: 'POST',
@@ -28,25 +26,21 @@ export default function AgregarAmbiente({ navigation, baseUrl = process.env.EXPO
                     'Authorization': `Bearer ${token}`,
                     'Content-Type': 'application/json',
                 },
-                body: JSON.stringify({ nombre, temperatura }),
+                body: JSON.stringify({ nombre, temperatura: Number(temperatura) }),
             });
 
-            console.log('Response status:', response.status);
-            
             if (!response.ok) {
                 const errorData = await response.json();
-                console.log('Error response:', errorData);
                 Alert.alert('Error', errorData.message || 'No se pudo agregar el ambiente');
                 return;
             }
 
-            const successData = await response.json();
-            console.log('Success response:', successData);
+            await response.json();
             
             Alert.alert('Éxito', 'Ambiente agregado con éxito');
             navigation.navigate('Plantas'); // Navigate to the Plantas screen or any other screen
         } catch (error) {
-            console.log('Error:', error);
+            console.error('Error al crear ambiente:', error.message);
             Alert.alert('Error', 'No se pudo conectar con el servidor');
         }
     };

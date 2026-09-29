@@ -17,6 +17,7 @@ export default function CalendarAgenda({ userId }) {
         const [allVisible, setAllVisible] = useState(false);
         const [selected, setSelected] = useState(dayjs().format("YYYY-MM-DD"));
         const [events, setEvents] = useState([]); // [{id,title,notes,date, time}]
+        const [loadedForUser, setLoadedForUser] = useState(null);
         const [rangeStart, setRangeStart] = useState(null);
         const [rangeEnd, setRangeEnd] = useState(null);
         const [modalVisible, setModalVisible] = useState(false);
@@ -103,20 +104,29 @@ const onSaveEvent = (payload) => {
 };
   // Load events from storage
   useEffect(() => {
+    let active = true;
+    setLoadedForUser(null);
+    setEvents([]);
     (async () => {
       try {
         const raw = await AsyncStorage.getItem(STORAGE_KEY(userId));
-        if (raw) setEvents(JSON.parse(raw));
+        const parsed = raw ? JSON.parse(raw) : [];
+        if (active && Array.isArray(parsed)) {
+          setEvents(parsed);
+          setLoadedForUser(userId);
+        }
       } catch (e) {
         console.warn("No se pudieron cargar los eventos:", e?.message);
       }
     })();
+    return () => { active = false; };
   }, [userId]);
 
-  // Persist on change
+  // Avoid overwriting stored events until this user's data has loaded.
   useEffect(() => {
+    if (loadedForUser !== userId) return;
     AsyncStorage.setItem(STORAGE_KEY(userId), JSON.stringify(events)).catch(() => {});
-  }, [events, userId]);
+  }, [events, loadedForUser, userId]);
 
 const rangeEvents = useMemo(() => {
   const inDay = (ev, day) => {

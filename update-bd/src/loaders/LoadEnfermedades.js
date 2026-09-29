@@ -1,59 +1,43 @@
 import axios from "axios";
-import * as cheerio from "cheerio";
 import { Pool } from "pg";
-import { uploadImageToSupabase } from "../utils/uploadImageToSupabase.js";
 
 
 export class EnfermedadesLoader {
   constructor() {
     this.pool = new Pool({
+      ...(process.env.DB_URL ? {
+        connectionString: process.env.DB_URL,
+        ssl: { rejectUnauthorized: process.env.DB_SSL_REJECT_UNAUTHORIZED !== 'false' },
+      } : {
       user: process.env.DB_USER,
-      password: process.env.DB_PASSWORD,
+      password: process.env.DB_PASSWORD || process.env.DB_password,
       host: process.env.DB_HOST,
       database: process.env.DB_NAME,
-      port: 5432,
+      port: Number(process.env.DB_PORT || 5432),
+      }),
     });
   }
 
   async upsertEnfermedad({ nombre, nombreCientifico, descripcion, solucion, especies, fuente, foto }) {
     const client = await this.pool.connect();
-    console.log("Nombre:" + nombre);
-    console.log("nombreCientifico:" + nombreCientifico);
-    console.log("descripcion:" + descripcion);
-    console.log("solucion:" + solucion);
-    console.log("especies:" + especies);
-    console.log("fuente:" + fuente);
-
     try {
+      const cleanSpecies = Array.isArray(especies) ? especies.filter(Boolean) : [];
+      const cleanDescriptions = Array.isArray(descripcion) ? descripcion.filter(Boolean) : [];
+      const cleanSolutions = Array.isArray(solucion) ? solucion.filter(Boolean) : [];
       const { rows } = await client.query(
         `SELECT * FROM "Enfermedad" 
         WHERE LOWER("Nombre") = LOWER($1) 
-            OR LOWER("NombreCientifico") = LOWER($2)`,
-        [nombre, nombreCientifico]
+            OR ($2 <> '' AND LOWER("NombreCientifico") = LOWER($2))`,
+        [nombre, nombreCientifico || '']
       );
 
       if (rows.length > 0) {
         const enfermedad = rows[0];
 
-        const nuevasFuentes = enfermedad.Fuente?.includes(fuente)
-          ? enfermedad.Fuente
-          : [...(enfermedad.Fuente || []), fuente];
-
-       const nuevasDescripciones = descripcion && descripcion.length > 0
-  ? [ ...(enfermedad.Descripcion || []), ...descripcion ]
-  : enfermedad.Descripcion;
-
-const nuevasSoluciones = solucion && solucion.length > 0
-  ? [ ...(enfermedad.Solucion || []), ...solucion ]
-  : enfermedad.Solucion;
-
-  //Para q no guarde especies repetidas
-    let especiesFiltradas = especies.filter(especie => !enfermedad.EspeciesComunes?.includes(especie));
-
-        const nuevasEspecies =  [
-          ...(enfermedad.EspeciesComunes || []),
-          ...(especiesFiltradas || [])
-        ];
+        const nuevasFuentes = [...new Set([...(enfermedad.Fuente || []), fuente].filter(Boolean))];
+        const nuevasDescripciones = [...new Set([...(enfermedad.Descripcion || []), ...cleanDescriptions])];
+        const nuevasSoluciones = [...new Set([...(enfermedad.Solucion || []), ...cleanSolutions])];
+        const nuevasEspecies = [...new Set([...(enfermedad.EspeciesComunes || []), ...cleanSpecies])];
 
         await client.query(
           `UPDATE "Enfermedad"
@@ -84,9 +68,9 @@ const nuevasSoluciones = solucion && solucion.length > 0
           [
             [fuente],
             nombre,
-            descripcion,
-            solucion,
-            especies,
+            cleanDescriptions,
+            cleanSolutions,
+            cleanSpecies,
             nombreCientifico,
             foto
           ]
@@ -95,7 +79,7 @@ const nuevasSoluciones = solucion && solucion.length > 0
         console.log(`✅ Insertada nueva enfermedad: ${nombre}`);
       }
     } catch (err) {
-      console.error(`❌ Error con ${nombre}:`, err.message);
+      throw new Error(`Error con ${nombre}: ${err.message}`, { cause: err });
     } finally {
       client.release();
     }
@@ -103,28 +87,46 @@ const nuevasSoluciones = solucion && solucion.length > 0
 
   //Solo busca en página 1 (agregarle a la URL la página q se quiere agregar)
   async fetchPerenual() {
-    console.log("🌱 Obteniendo datos desde Perenual...");
+    console.log("Obteniendo datos desde Perenual...");
     const apiKey = process.env.PERENUAL_KEY;
-    const url = `https://perenual.com/api/pest-disease-list?key=${apiKey}&page=1`;
-    let { data } = await axios.get(url);
-    
+    if (!apiKey) throw new Error('PERENUAL_KEY no está configurado');
+    const { data } = await axios.get('https://perenual.com/api/pest-disease-list', {
+      params: { key: apiKey, page: 1 },
+      timeout: 15000,
+    });
+    if (!Array.isArray(data?.data)) throw new Error('Perenual devolvió una respuesta inválida');
+
     return data.data.map((item) => ({
       nombre: item.common_name || item.name,
       nombreCientifico: item.scientific_name || "",
-      descripcion: item.description.map((descripcion) => `${descripcion.subtitle} ${descripcion.description}`) || "",
-      solucion: item.solution.map((soluc) => `${soluc.subtitle} ${soluc.description}`)  || "",
-      especies: item.host ? item.host : [],
+      descripcion: (Array.isArray(item.description) ? item.description : []).map((description) => `${description.subtitle || ''} ${description.description || ''}`.trim()).filter(Boolean),
+      solucion: (Array.isArray(item.solution) ? item.solution : []).map((solution) => `${solution.subtitle || ''} ${solution.description || ''}`.trim()).filter(Boolean),
+      especies: Array.isArray(item.host) ? item.host : [],
       fuente: "perenual",
-      // foto: null,
     }));
   }
 
 
   async run() {
-    console.log("🚀 Iniciando sincronización de enfermedades...");
-    const enfermedades = await this.fetchPerenual();
-    for (const e of enfermedades) await this.upsertEnfermedad(e);
-    console.log("✅ Sincronización completada.");
-    process.exit();
+    try {
+      console.log("Iniciando sincronización de enfermedades...");
+      const enfermedades = await this.fetchPerenual();
+      let updated = 0;
+      let failed = 0;
+      for (const enfermedad of enfermedades) {
+        try {
+          await this.upsertEnfermedad(enfermedad);
+          updated += 1;
+        } catch (error) {
+          failed += 1;
+          console.error(error.message);
+        }
+      }
+      const summary = { total: enfermedades.length, updated, failed };
+      console.log(`Sincronización completada: ${updated}/${enfermedades.length}; ${failed} con errores.`);
+      return summary;
+    } finally {
+      await this.pool.end();
+    }
   }
 }

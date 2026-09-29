@@ -8,18 +8,9 @@ import {
   Alert,
   TouchableOpacity,
   ScrollView,
-  Platform,
 } from 'react-native';
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import { getApiBaseUrl } from '../services/api';
-
-const ENDPOINTS = {
-  medir: '/api/sensores/medir',        // <-- ajusta si usás otro path (ej: '/api/sensores/forzarMedicion')
-  regar: '/api/riego/regar',           // <-- ajusta si usás otro path (ej: '/api/sensores/regar')
-  desconectarModulo: '/api/sensores/desconectarModulo',
-  eliminarPlanta: '/api/plantas/eliminar',
-  getInfo: '/api/plantas/getInfoPlanta',
-};
+import { getAuthToken } from '../services/authStorage';
 
 export default function InfoPlanta({ route, navigation }) {
   const { idPlanta } = route.params;
@@ -27,18 +18,16 @@ export default function InfoPlanta({ route, navigation }) {
   const [planta, setPlanta] = useState(null);
   const [loading, setLoading] = useState(true);
   const [working, setWorking] = useState(false);
-  const [measuring, setMeasuring] = useState(false);
-  const [watering, setWatering] = useState(false);
 
   const numberOrNull = (v) =>
-    v === null || v === undefined || v === '' || Number.isNaN(Number(v))
+    v === null || v === undefined || v === '' || !Number.isFinite(Number(v))
       ? null
       : Number(v);
 
   const fetchInfoPlanta = useCallback(async () => {
     setLoading(true);
     try {
-      const token = await AsyncStorage.getItem('token');
+      const token = await getAuthToken();
       if (!token) {
         Alert.alert('Error', 'No se encontró el token de usuario');
         setPlanta(null);
@@ -46,33 +35,49 @@ export default function InfoPlanta({ route, navigation }) {
         return;
       }
       const baseUrl = getApiBaseUrl();
-      const response = await fetch(
-        `${baseUrl}${ENDPOINTS.getInfo}?idPlanta=${idPlanta}`,
-        {
-          method: 'GET',
-          headers: {
-            Authorization: `Bearer ${token}`,
-            'Content-Type': 'application/json',
-          },
-        }
-      );
+      const headers = { Authorization: `Bearer ${token}` };
+      const plantResponse = await fetch(`${baseUrl}/api/plantas/misPlantas`, { headers });
+      const plantPayload = await plantResponse.json().catch(() => []);
+      if (!plantResponse.ok) throw new Error(plantPayload.message || 'No se pudo obtener la planta');
 
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
-        Alert.alert(
-          'Error',
-          errorData.message || 'No se pudo obtener la información de la planta'
-        );
-        setPlanta(null);
-      } else {
-        const data = await response.json();
-        setPlanta(data);
-      }
+      const plant = Array.isArray(plantPayload)
+        ? plantPayload.find((item) => String(item.ID) === String(idPlanta))
+        : null;
+      if (!plant) throw new Error('No se encontró información de la planta');
+
+      const [sensorResponse, wateringResponse] = await Promise.all([
+        fetch(`${baseUrl}/api/sensores/datosSensores?idPlanta=${encodeURIComponent(idPlanta)}`, { headers }),
+        fetch(`${baseUrl}/api/sensores/ultRiego?idPlanta=${encodeURIComponent(idPlanta)}`, { headers }),
+      ]);
+      const readOptional = async (response) => {
+        if (response.status === 404) return null;
+        const payload = await response.json().catch(() => ({}));
+        if (!response.ok) throw new Error(payload.message || 'No se pudieron cargar las mediciones');
+        return payload;
+      };
+      const [sensor, watering] = await Promise.all([
+        readOptional(sensorResponse),
+        readOptional(wateringResponse),
+      ]);
+
+      setPlanta({
+        idPlanta: plant.ID,
+        nombre: plant.Nombre,
+        tipo: plant.Tipo,
+        foto: plant.Foto,
+        ambiente: plant.Ambiente,
+        idModulo: plant.IdModulo,
+        humedad: sensor?.HumedadDsp,
+        temperatura: sensor?.Temperatura,
+        ultimaMedicion: sensor?.Fecha,
+        ultimaFechaRiego: watering?.UltimaFechaRiego,
+      });
     } catch (error) {
-      Alert.alert('Error', 'No se pudo conectar con el servidor');
+      Alert.alert('Error', error.message || 'No se pudo cargar la información de la planta');
       setPlanta(null);
+    } finally {
+      setLoading(false);
     }
-    setLoading(false);
   }, [idPlanta]);
 
   useEffect(() => {
@@ -98,6 +103,7 @@ export default function InfoPlanta({ route, navigation }) {
     if (!isoLike) return '—';
     try {
       const d = new Date(isoLike);
+      if (Number.isNaN(d.getTime())) return '—';
       const dd = d.toLocaleString();
       return dd || '—';
     } catch {
@@ -119,9 +125,9 @@ export default function InfoPlanta({ route, navigation }) {
   const handleDisconnect = async () => {
     try {
       setWorking(true);
-      const token = await AsyncStorage.getItem('token');
+      const token = await getAuthToken();
       const baseUrl = getApiBaseUrl();
-      const res = await fetch(`${baseUrl}${ENDPOINTS.desconectarModulo}`, {
+      const res = await fetch(`${baseUrl}/api/sensores/desconectarModulo`, {
         method: 'DELETE',
         headers: {
           Authorization: `Bearer ${token}`,
@@ -156,9 +162,9 @@ export default function InfoPlanta({ route, navigation }) {
   const handleDelete = async () => {
     try {
       setWorking(true);
-      const token = await AsyncStorage.getItem('token');
+      const token = await getAuthToken();
       const baseUrl = getApiBaseUrl();
-      const res = await fetch(`${baseUrl}${ENDPOINTS.eliminarPlanta}`, {
+      const res = await fetch(`${baseUrl}/api/plantas/eliminar`, {
         method: 'DELETE',
         headers: {
           Authorization: `Bearer ${token}`,
@@ -176,59 +182,6 @@ export default function InfoPlanta({ route, navigation }) {
       Alert.alert('Error', e.message || 'No se pudo eliminar la planta');
     } finally {
       setWorking(false);
-    }
-  };
-
-  // ---------- Acciones principales ----------
-  const requestMeasurement = async () => {
-    try {
-      setMeasuring(true);
-      const token = await AsyncStorage.getItem('token');
-      const baseUrl = getApiBaseUrl();
-      const res = await fetch(`${baseUrl}${ENDPOINTS.medir}`, {
-        method: 'POST',
-        headers: {
-          Authorization: `Bearer ${token}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ idPlanta: Number(idPlanta) }),
-      });
-      if (!res.ok) {
-        const err = await res.json().catch(() => ({}));
-        throw new Error(err.message || 'No se pudo pedir la medición');
-      }
-      Alert.alert('Listo', 'Medición solicitada. Actualizando datos…');
-      await fetchInfoPlanta();
-    } catch (e) {
-      Alert.alert('Error', e.message || 'No se pudo pedir la medición');
-    } finally {
-      setMeasuring(false);
-    }
-  };
-
-  const requestWatering = async () => {
-    try {
-      setWatering(true);
-      const token = await AsyncStorage.getItem('token');
-      const baseUrl = getApiBaseUrl();
-      const res = await fetch(`${baseUrl}${ENDPOINTS.regar}`, {
-        method: 'POST',
-        headers: {
-          Authorization: `Bearer ${token}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ idPlanta: Number(idPlanta) }),
-      });
-      if (!res.ok) {
-        const err = await res.json().catch(() => ({}));
-        throw new Error(err.message || 'No se pudo iniciar el riego');
-      }
-      Alert.alert('Listo', 'Riego iniciado. Actualizando datos…');
-      await fetchInfoPlanta();
-    } catch (e) {
-      Alert.alert('Error', e.message || 'No se pudo iniciar el riego');
-    } finally {
-      setWatering(false);
     }
   };
 
@@ -277,7 +230,8 @@ export default function InfoPlanta({ route, navigation }) {
         <View style={styles.metaRow}>
           <MetaItem label="ID Planta" value={String(planta.idPlanta)} />
           {planta.idModulo ? <MetaItem label="ID Módulo" value={String(planta.idModulo)} /> : null}
-          <MetaItem label="Última medición" value={formatDate(planta.ultimaMedicion || planta.updatedAt)} />
+          <MetaItem label="Última medición" value={formatDate(planta.ultimaMedicion)} />
+          <MetaItem label="Último riego" value={formatDate(planta.ultimaFechaRiego)} />
         </View>
       </View>
 
@@ -309,27 +263,9 @@ export default function InfoPlanta({ route, navigation }) {
         </View>
       </View>
 
-      {/* Primary Actions */}
       <View style={styles.card}>
-        <Text style={styles.sectionTitle}>Acciones</Text>
-
+        <Text style={styles.sectionTitle}>Administrar planta</Text>
         <View style={styles.actionsRow}>
-          <PrimaryButton
-            label="Pedir medición"
-            onPress={requestMeasurement}
-            disabled={measuring}
-            loading={measuring}
-          />
-          <PrimaryOutlineButton
-            label="Regar ahora"
-            onPress={requestWatering}
-            disabled={watering}
-            loading={watering}
-          />
-        </View>
-
-        {/* Maintenance actions */}
-        <View style={[styles.actionsRow, { marginTop: 12 }]}>
           <NeutralButton
             label="Desconectar módulo"
             onPress={confirmDisconnect}
@@ -370,34 +306,6 @@ function Bar({ value = 0, tone = '#22A45D' }) {
     <View style={styles.barTrack}>
       <View style={[styles.barFill, { width: `${pct}%`, backgroundColor: tone }]} />
     </View>
-  );
-}
-
-function PrimaryButton({ label, onPress, disabled, loading }) {
-  return (
-    <TouchableOpacity
-      onPress={onPress}
-      disabled={disabled}
-      style={[styles.btn, styles.btnPrimary, disabled && styles.btnDisabled]}
-    >
-      {loading ? <ActivityIndicator size="small" color="#fff" /> : <Text style={styles.btnPrimaryText}>{label}</Text>}
-    </TouchableOpacity>
-  );
-}
-
-function PrimaryOutlineButton({ label, onPress, disabled, loading }) {
-  return (
-    <TouchableOpacity
-      onPress={onPress}
-      disabled={disabled}
-      style={[styles.btn, styles.btnOutline, disabled && styles.btnDisabled]}
-    >
-      {loading ? (
-        <ActivityIndicator size="small" color="#22A45D" />
-      ) : (
-        <Text style={styles.btnOutlineText}>{label}</Text>
-      )}
-    </TouchableOpacity>
   );
 }
 

@@ -1,41 +1,38 @@
 
 export class validaciones {
     isValidEmail(email) {
-        // Expresión regular simple para validar emails
         const re = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-        if (!email || typeof email !== 'string' || !re.test(email)) {
-           return false;
-        }
-        return true;
+        return typeof email === 'string' && re.test(email.trim());
     }
 
     isValidString(string) {
-       if (!string || typeof string !== 'string' || string.trim() === '' || string.length < 3) {
-            return false;
-        }
-        return true;
+       return typeof string === 'string' && string.trim().length >= 3;
     }
 
     isPositivo(value) {
-        if (value === undefined || value <= 0 || isNaN(value)) {
-           return false;
-        }
-        return true;
+        return typeof value === 'number' && Number.isFinite(value) && value > 0;
+    }
+
+    isEnteroPositivo(value) {
+        return Number.isSafeInteger(value) && value > 0;
+    }
+
+    isValidHumidity(value) {
+        return typeof value === 'number' && Number.isFinite(value) && value >= 0 && value <= 100;
+    }
+
+    isValidTemperature(value) {
+        return typeof value === 'number' && Number.isFinite(value) && value >= -40 && value <= 85;
     }
 
     isValidDate(dateString) { 
-        const date = new Date(dateString);
-        let ret = true;
-        if (isNaN(date.getTime())) {
-            ret =  false; 
-        }
-        return ret;
+        return typeof dateString === 'string' && dateString.trim() !== '' && Number.isFinite(Date.parse(dateString));
     }
     
     isValidPassword(password) {
         if (!password || typeof password !== 'string') {
             return false;
         }
-        return password.length >= 8 && /[a-zA-Z]/.test(password) && /\d/.test(password);
+        return password.length >= 8 && Buffer.byteLength(password, 'utf8') <= 72 && /[a-zA-Z]/.test(password) && /\d/.test(password);
     }
 }

@@ -4,13 +4,10 @@
   "version": "0.0.0",
   "type": "module",
   "scripts": {
-    "dev": "vite",
-    "build": "vite build",
-    "lint": "eslint .",
-    "preview": "vite preview",
     "start": "node ./index.js",
-    "start especies": "node ./index.js",
-    "start enfermedades": "node ./index.js"
+    "especies": "node ./index.js especies",
+    "enfermedades": "node ./index.js enfermedades",
+    "lint": "eslint src index.js"
   },
   "dependencies": {
     "@llamaindex/ollama": "^0.1.23",

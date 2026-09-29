@@ -1,5 +1,5 @@
 import axios from "axios";
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import { getAuthToken } from './authStorage';
 
 export const createAPI = (baseURL, { timeout = 8000 } = {}) => {
   const instance = axios.create({
@@ -12,7 +12,7 @@ export const createAPI = (baseURL, { timeout = 8000 } = {}) => {
   instance.interceptors.request.use(
     async (config) => {
       try {
-        const token = await AsyncStorage.getItem('token');
+        const token = await getAuthToken();
         if (token) {
           config.headers = config.headers || {};
           config.headers.Authorization = `Bearer ${token}`;
@@ -33,12 +33,6 @@ export const createAPI = (baseURL, { timeout = 8000 } = {}) => {
       return response;
     },
     (error) => {
-      // Manejar errores específicos
-      if (error.response?.status === 401) {
-        // Token expirado o inválido
-        console.log('Token expirado o inválido');
-        // Aquí podrías redirigir al login
-      }
       return Promise.reject(error);
     }
   );
@@ -48,5 +42,6 @@ export const createAPI = (baseURL, { timeout = 8000 } = {}) => {
 
 // Función helper para obtener la URL base de la API
 export const getApiBaseUrl = () => {
-  return process.env.EXPO_PUBLIC_API_URL || 'http://localhost:3000';
+  const configuredUrl = process.env.EXPO_PUBLIC_API_URL?.trim();
+  return (configuredUrl || 'http://localhost:3000').replace(/\/+$/, '');
 };

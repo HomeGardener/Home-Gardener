@@ -1,5 +1,4 @@
-import dotenv from 'dotenv';
-dotenv.config();
+import 'dotenv/config';
 import express from 'express';
 import cors from 'cors';
 import { StatusCodes } from 'http-status-codes';
@@ -16,7 +15,7 @@ import RiegoRoutes from './src/controllers/riego-controller.js';
 
 // Validar variables de entorno críticas
 const hasDbUrl = !!process.env.DB_URL;
-const hasDbParts = !!(process.env.DB_HOST && process.env.DB_USER && process.env.DB_PASSWORD && process.env.DB_NAME);
+const hasDbParts = !!(process.env.DB_HOST && process.env.DB_USER && (process.env.DB_PASSWORD || process.env.DB_password) && process.env.DB_NAME);
 const missing = [];
 if (!process.env.JWT_SECRET) missing.push('JWT_SECRET');
 if (!hasDbUrl && !hasDbParts) missing.push('DB_URL o (DB_HOST, DB_USER, DB_PASSWORD, DB_NAME)');
@@ -36,11 +35,18 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 // Configuración de CORS más segura
+const allowedOrigins = (process.env.FRONTEND_URL || '')
+  .split(',')
+  .map((origin) => origin.trim())
+  .filter(Boolean);
 const corsOptions = {
-  origin: process.env.NODE_ENV === 'production' 
-    ? [process.env.FRONTEND_URL || 'http://localhost:3000'] // Solo permitir origen específico en producción
-    : '*', // Permitir todos en desarrollo
-  credentials: true,
+  origin(origin, callback) {
+    if (!origin || process.env.NODE_ENV !== 'production' || allowedOrigins.includes(origin)) {
+      return callback(null, true);
+    }
+    return callback(null, false);
+  },
+  credentials: false,
   optionsSuccessStatus: 200,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization']
@@ -49,8 +55,8 @@ const corsOptions = {
 app.use(cors(corsOptions));
 
 // Middleware para parsear JSON
-app.use(express.json({ limit: '10mb' }));
-app.use(express.urlencoded({ extended: true, limit: '10mb' }));
+app.use(express.json({ limit: '1mb' }));
+app.use(express.urlencoded({ extended: true, limit: '1mb' }));
 
 // Configura la carpeta 'uploads' para ser accesible públicamente
 app.use('/backend/uploads', express.static(path.join(__dirname, 'uploads')));
@@ -81,6 +87,8 @@ app.get('/', (req, res) => {
     endpoints: {
       auth: '/api/auth',
       plantas: '/api/plantas',
+      sensores: '/api/sensores',
+      ambiente: '/api/ambiente',
       riego: '/api/riego',
       health: '/health'
     }
@@ -88,7 +96,7 @@ app.get('/', (req, res) => {
 });
 
 // Middleware para manejar rutas no encontradas
-app.use('*', (req, res) => {
+app.use((req, res) => {
   res.status(StatusCodes.NOT_FOUND).json({
     success: false,
     message: 'Ruta no encontrada',
@@ -99,11 +107,12 @@ app.use('*', (req, res) => {
 
 // Middleware global de manejo de errores
 app.use((error, req, res, next) => {
-  console.error('❌ Error no manejado:', error);
-  res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({
+  if (res.headersSent) return next(error);
+  const status = error.type === 'entity.parse.failed' ? StatusCodes.BAD_REQUEST : StatusCodes.INTERNAL_SERVER_ERROR;
+  if (status >= 500) console.error('Error no manejado en la API:', error.message);
+  return res.status(status).json({
     success: false,
-    message: 'Error interno del servidor',
-    error: process.env.NODE_ENV === 'development' ? error.message : undefined
+    message: status === StatusCodes.BAD_REQUEST ? 'El cuerpo de la solicitud no es válido' : 'Error interno del servidor',
   });
 });
 

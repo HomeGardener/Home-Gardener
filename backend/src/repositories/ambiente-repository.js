@@ -4,13 +4,13 @@ import DB_config from '../configs/db_configs.js';
 const pool = new Pool(DB_config);
 
 export default class AmbienteRepository {
-  async create(nombre, idUsuario) {
+  async create(nombre, idUsuario, temperatura) {
     const query = `
-      INSERT INTO "Ambiente" ("Nombre", "IdUsuario")
-      VALUES ($1, $2)
-      RETURNING "ID"
+      INSERT INTO "Ambiente" ("Nombre", "IdUsuario", "Temperatura")
+      VALUES ($1, $2, $3)
+      RETURNING "ID", "Nombre", "Temperatura"
     `;
-    const values = [nombre, idUsuario];
+    const values = [nombre, idUsuario, temperatura];
     const result = await pool.query(query, values);
     return result.rows[0];
   }
@@ -22,7 +22,7 @@ export default class AmbienteRepository {
         "A"."Nombre", 
         "A"."Temperatura", 
         "A"."IdUsuario",
-        COALESCE(ARRAY_AGG("P"."Nombre"), '{}') AS "Plantas" -- Trae las plantas asociadas al ambiente
+        COALESCE(ARRAY_AGG("P"."Nombre") FILTER (WHERE "P"."ID" IS NOT NULL), '{}') AS "Plantas"
       FROM "Ambiente" AS "A"
       LEFT JOIN "Planta" AS "P" ON "P"."IdAmbiente" = "A"."ID"
       WHERE "A"."IdUsuario" = $1
